@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新商品管理 — しょぷー</title>
+  <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    /* ══════════════════════════════════════
+       SHARED BASE
+    ══════════════════════════════════════ */
+    :root {
+      --c-success:  #2E7D32;
+      --c-success-bg: #E8F5E9;
+      --c-danger:   #C62828;
+      --c-danger-bg:#FFEBEE;
+      --c-warn:     #E65100;
+      --c-warn-bg:  #FFF3E0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'BIZ UDPGothic','Hiragino Sans','Meiryo',sans-serif;
+      background: #eef0f3;
+      color: #212121;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ══════════════════════════════════════
+       HEADER + TABS
+    ══════════════════════════════════════ */
+    .app-header {
+      background: #1565C0;
+      border-bottom: 3px solid #0D47A1;
+      color: #fff;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+      min-height: 48px;
+    }
+    .app-title { font-size: 0.95rem; font-weight: 700; white-space: nowrap; }
+    .tab-bar { display: flex; gap: 4px; flex: 1; }
+    .tab-btn {
+      padding: 6px 18px;
+      border: none;
+      border-radius: 4px 4px 0 0;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.75);
+      transition: all 0.15s;
+      align-self: flex-end;
+      margin-bottom: 0;
+    }
+    .tab-btn.active {
+      background: rgba(255,255,255,0.95);
+      color: #1565C0;
+    }
+    .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.22); color: #fff; }
+    .hdr-right { display: flex; gap: 8px; align-items: center; }
+    .btn-ghost-hdr {
+      padding: 6px 14px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-ghost-hdr:hover { background: rgba(255,255,255,0.28); }
+    .btn-accent-hdr {
+      padding: 6px 16px;
+      border-radius: 3px;
+      border: none;
+      background: #fff;
+      color: #1565C0;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-accent-hdr:hover { background: #e3f2fd; }
+
+    /* ══════════════════════════════════════
+       TAB CONTENT AREAS
+    ══════════════════════════════════════ */
+    .tab-content { display: none; flex: 1; }
+    .tab-content.active { display: flex; flex-direction: column; }
+
+    /* ══════════════════════════════════════
+       SIMULATOR TAB — color scope
+    ══════════════════════════════════════ */
+    #tab-sim {
+      --c-primary:      #1565C0;
+      --c-primary-dark: #0D47A1;
+      --c-primary-mid:  #1976D2;
+      --c-light-bg:     #e3f2fd;
+      --c-light-bg-alt: #f5f9ff;
+      --c-light-border: #BBDEFB;
+      overflow-y: auto;
+    }
+    #tab-sim .sim-body {
+      max-width: 1340px;
+      margin: 0 auto;
+      padding: 20px 18px;
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    @media (max-width: 960px) { #tab-sim .sim-body { grid-template-columns: 1fr; } }
+
+    /* Cards */
+    #tab-sim .card {
+      background: #fff;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 18px 22px;
+      margin-bottom: 14px;
+    }
+    #tab-sim .card h2 {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--c-primary);
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--c-light-bg);
+    }
+    #tab-sim .field { margin-bottom: 12px; }
+    #tab-sim .field:last-child { margin-bottom: 0; }
+    #tab-sim .field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #616161;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+    #tab-sim .field input[type="text"],
+    #tab-sim .field input[type="number"],
+    #tab-sim .field select {
+      width: 100%;
+      padding: 8px 11px;
+      border: 1px solid #bdbdbd;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.86rem;
+      color: #212121;
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+    #tab-sim .field input:focus,
+    #tab-sim .field select:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 2px rgba(21,101,192,0.1); }
+    #tab-sim .field .hint { font-size: 0.68rem; color: #9e9e9e; margin-top: 3px; }
+    #tab-sim .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cost-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .cost-item {
+      display: grid;
+      grid-template-columns: 1fr 130px 28px;
+      gap: 5px;
+      align-items: center;
+    }
+    .cost-item input {
+      padding: 7px 10px;
+      border: 1px solid #bdbdbd;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.81rem;
+      color: #212121;
+      background: #fff;
+    }
+    .cost-item input:focus { outline: none; border-color: var(--c-primary); }
+    .cost-item input.amount-input { text-align: right; }
+    .btn-remove {
+      width: 26px; height: 26px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: #9e9e9e;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-remove:hover { background: #ffebee; border-color: #ef9a9a; color: #c62828; }
+    .btn-add {
+      border: 1px dashed #1976D2;
+      background: #f5f9ff;
+      color: #1565C0;
+      border-radius: 3px;
+      padding: 7px 14px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.15s;
+    }
+    .btn-add:hover { background: #e3f2fd; }
+    .total-bar {
+      background: var(--c-light-bg);
+      border: 1px solid var(--c-light-border);
+      border-radius: 3px;
+      padding: 9px 14px;
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-bar .t-label { font-size: 0.75rem; font-weight: 700; color: #424242; }
+    .total-bar .t-value { font-size: 1rem; font-weight: 700; color: #424242; }
+    /* KPI */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .kpi-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 16px 14px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .kpi-card.highlight       { border-color: #1565C0; background: #f5f9ff; border-left: 3px solid #1565C0; }
+    .kpi-card.success-highlight { border-color: var(--c-success); background: var(--c-success-bg); border-left: 3px solid var(--c-success); }
+    .kpi-label { font-size: 0.68rem; font-weight: 700; color: #757575; letter-spacing: 0.03em; margin-bottom: 8px; }
+    .kpi-value { font-size: 1.45rem; font-weight: 700; color: #212121; }
+    .kpi-unit  { font-size: 0.72rem; color: #9e9e9e; margin-top: 3px; }
+    .kpi-value.c-primary { color: #1565C0; }
+    .kpi-value.c-success { color: var(--c-success); }
+    .kpi-value.c-danger  { color: var(--c-danger); }
+    .kpi-value.c-warn    { color: var(--c-warn); }
+    /* Chart cards */
+    .chart-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      margin-bottom: 14px;
+    }
+    .chart-card h2 {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #1565C0;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e3f2fd;
+    }
+    .chart-card .chart-desc { font-size: 0.72rem; color: #9e9e9e; margin-bottom: 10px; }
+    .chart-wrap { position: relative; height: 280px; }
+    .alert {
+      border-radius: 3px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+      border-left: 3px solid;
+      line-height: 1.5;
+    }
+    .alert.info    { background: #f5f9ff; border-color: #1565C0; color: #0D47A1; }
+    .alert.warn    { background: var(--c-warn-bg); border-color: var(--c-warn); color: var(--c-warn); }
+    .alert.danger  { background: var(--c-danger-bg); border-color: var(--c-danger); color: var(--c-danger); }
+    .alert.success { background: var(--c-success-bg); border-color: var(--c-success); color: var(--c-success); }
+    .breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 6px; }
+    .breakdown-table th {
+      background: #1565C0;
+      color: #fff;
+      padding: 7px 10px;
+      font-weight: 700;
+      text-align: left;
+      font-size: 0.75rem;
+    }
+    .breakdown-table th:last-child { text-align: right; }
+    .breakdown-table td { padding: 6px 10px; border-bottom: 1px solid #eeeeee; color: #424242; }
+    .breakdown-table td:last-child { text-align: right; font-weight: 700; }
+    .breakdown-table tr:nth-child(even) td { background: #f5f9ff; }
+    .breakdown-table .total-row td { background: #e3f2fd !important; font-weight: 700; color: #212121; border-top: 2px solid #BBDEFB; }
+    .section-note { font-size: 0.72rem; color: #9e9e9e; margin-bottom: 10px; line-height: 1.5; }
+
+    /* ── Outflow card (simulator) ── */
+    .outflow-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 18px 22px;
+      margin-bottom: 14px;
+    }
+    .outflow-card-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #1565C0;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e3f2fd;
+    }
+
+    /* "トラッカーに追加" banner */
+    .add-to-tracker-bar {
+      background: #e3f2fd;
+      border: 1px solid #BBDEFB;
+      border-radius: 6px;
+      padding: 12px 18px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .add-to-tracker-bar .atb-msg { font-size: 0.78rem; color: #424242; }
+    .add-to-tracker-bar .atb-msg strong { color: #1565C0; }
+    .btn-add-tracker {
+      padding: 8px 20px;
+      background: #1565C0;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-add-tracker:hover { background: #0D47A1; }
+
+    /* ══════════════════════════════════════
+       TRACKER TAB — color scope
+    ══════════════════════════════════════ */
+    #tab-tracker {
+      --c-primary:      #1565C0;
+      --c-primary-dark: #0D47A1;
+      --c-primary-mid:  #1976D2;
+      --c-light-bg:     #e3f2fd;
+      --c-light-bg-alt: #f5f9ff;
+      --c-light-border: #BBDEFB;
+    }
+    .controls-bar {
+      background: #0D47A1;
+      padding: 7px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .controls-bar .ctrl-label { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.85); }
+    .ctrl-select {
+      padding: 5px 9px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .ctrl-select option { background: #0D47A1; color: #fff; }
+    .ctrl-input {
+      padding: 5px 9px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      width: 130px;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .ctrl-input::placeholder { color: rgba(255,255,255,0.55); }
+    .ctrl-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.25); }
+    .btn-ctrl-white {
+      padding: 5px 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-ctrl-white:hover { background: rgba(255,255,255,0.3); }
+    .board-area { flex: 1; overflow: auto; padding: 16px 20px; }
+    .table-outer {
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      overflow: auto;
+      min-height: 200px;
+    }
+    #tab-tracker table { border-collapse: collapse; font-size: 0.78rem; white-space: nowrap; }
+    .th-name, .td-name {
+      position: sticky; left: 0; z-index: 3;
+      background: #0D47A1;
+      min-width: 150px; max-width: 180px;
+    }
+    .td-name { background: #fff; z-index: 2; border-right: 2px solid #BBDEFB !important; }
+    #tab-tracker tbody tr:hover .td-name { background: #f5f9ff; }
+    #tab-tracker th {
+      background: #1565C0;
+      color: #fff;
+      padding: 8px 12px;
+      font-weight: 700;
+      text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.15);
+      position: sticky; top: 0; z-index: 1;
+    }
+    #tab-tracker th.th-name { z-index: 5; background: #0D47A1; }
+    #tab-tracker th.th-period-header { background: #0D47A1; text-align: center; padding: 6px 8px; }
+    #tab-tracker th.th-sub { background: #1565C0; font-size: 0.68rem; font-weight: 400; padding: 5px 8px; }
+    #tab-tracker th.th-actions {
+      background: #0D47A1; min-width: 130px;
+      position: sticky; right: 0; z-index: 4;
+      box-shadow: -2px 0 6px rgba(0,0,0,0.15);
+    }
+    .td-actions {
+      position: sticky; right: 0; z-index: 2;
+      background: #fff;
+      box-shadow: -2px 0 6px rgba(0,0,0,0.1);
+    }
+    #tab-tracker td {
+      padding: 7px 12px;
+      border-bottom: 1px solid #eeeeee;
+      border-right: 1px solid #f2f2f2;
+      vertical-align: middle;
+    }
+    #tab-tracker tbody tr:hover td { background: #f5f9ff; }
+    .td-id     { color: #9e9e9e; font-size: 0.72rem; text-align: center; }
+    .td-be     { text-align: center; font-weight: 700; color: #1565C0; }
+    .td-invest { text-align: right; font-weight: 700; color: var(--c-danger); }
+    .td-income { text-align: right; font-weight: 700; color: var(--c-success); }
+    .td-sales  { text-align: center; padding: 5px 6px; }
+    .sales-input {
+      width: 68px; padding: 5px 6px; text-align: right;
+      border: 1px solid #e0e0e0; border-radius: 3px;
+      font-family: inherit; font-size: 0.78rem; background: #fafafa;
+      transition: border-color 0.15s;
+    }
+    .sales-input:focus { outline: none; border-color: #1565C0; background: #fff; }
+    .td-pnl { min-width: 130px; padding: 5px 10px; }
+    .pnl-box { border-radius: 3px; padding: 6px 8px; }
+    .pnl-box.neg { background: rgba(198,40,40,0.07); }
+    .pnl-box.pos { background: rgba(46,125,50,0.07); }
+    .pnl-amount { font-size: 0.88rem; font-weight: 700; display: block; }
+    .pnl-amount.neg { color: var(--c-danger); }
+    .pnl-amount.pos { color: var(--c-success); }
+    .pnl-bar-bg { height: 3px; background: #e8e8e8; border-radius: 2px; margin-top: 4px; }
+    .pnl-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+    .pnl-bar-fill.neg { background: var(--c-danger); }
+    .pnl-bar-fill.pos { background: var(--c-success); }
+    .pnl-detail { font-size: 0.63rem; color: #9e9e9e; margin-top: 2px; }
+    .badge-ok {
+      display: inline-block;
+      background: var(--c-success); color: #fff;
+      font-size: 0.6rem; font-weight: 700;
+      padding: 1px 5px; border-radius: 2px; margin-left: 4px;
+      vertical-align: middle;
+    }
+    .td-empty { text-align: center; padding: 60px 20px; color: #bdbdbd; font-size: 0.86rem; }
+    .pname { font-weight: 700; color: #212121; font-size: 0.82rem; }
+    .psub  { font-size: 0.68rem; color: #9e9e9e; margin-top: 1px; }
+    .period-x { color: rgba(255,255,255,0.45); font-size: 0.6rem; cursor: pointer; margin-left: 5px; }
+    .period-x:hover { color: #fff; }
+
+    /* ── Tracker buttons ── */
+    .btn-trk { padding: 7px 14px; border-radius: 3px; border: none; font-family: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-trk-primary { background: #1565C0; color: #fff; }
+    .btn-trk-primary:hover { background: #0D47A1; }
+    .btn-trk-white { background: #fff; color: #1565C0; border: 1px solid #BBDEFB; }
+    .btn-trk-white:hover { background: #e3f2fd; }
+    .btn-danger-sm { background: #ffebee; color: var(--c-danger); border: 1px solid #ffcdd2; border-radius: 3px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+    .btn-edit-sm { background: #e3f2fd; color: #1565C0; border: 1px solid #BBDEFB; border-radius: 3px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-box {
+      background: #fff; border-radius: 5px;
+      width: min(540px,96vw); max-height: 92vh;
+      overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+    }
+    .modal-hd {
+      padding: 14px 18px; background: #1565C0; color: #fff;
+      font-size: 0.92rem; font-weight: 700;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 1;
+      border-radius: 5px 5px 0 0;
+    }
+    .modal-close { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 1.3rem; cursor: pointer; line-height: 1; }
+    .modal-close:hover { color: #fff; }
+    .modal-body { padding: 18px 20px; }
+    .modal-ft { padding: 12px 18px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; justify-content: flex-end; }
+    .f-field { margin-bottom: 12px; }
+    .f-field:last-child { margin-bottom: 0; }
+    .f-field label { display: block; font-size: 0.7rem; font-weight: 700; color: #616161; margin-bottom: 4px; }
+    .f-field input, .f-field select {
+      width: 100%; padding: 7px 10px; border: 1px solid #bdbdbd; border-radius: 3px;
+      font-family: inherit; font-size: 0.84rem; color: #212121; background: #fff;
+    }
+    .f-field input:focus, .f-field select:focus { outline: none; border-color: #1565C0; }
+    .f-field .hint { font-size: 0.67rem; color: #9e9e9e; margin-top: 3px; }
+    .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .f-section { font-size: 0.72rem; font-weight: 700; color: #1565C0; margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e3f2fd; }
+    .calc-preview { background: #f5f9ff; border: 1px solid #BBDEFB; border-radius: 3px; padding: 10px 14px; margin-top: 14px; }
+    .calc-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.76rem; }
+    .calc-row:last-child { margin-bottom: 0; padding-top: 6px; border-top: 1px solid #BBDEFB; font-weight: 700; font-size: 0.82rem; }
+    .calc-lbl { color: #757575; }
+    .calc-val  { font-weight: 700; color: #212121; }
+
+    /* ── Fetch / API buttons ── */
+    .btn-fetch-sm {
+      background: #fff3e0; color: #E65100; border: 1px solid #ffcc02;
+      border-radius: 3px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+    }
+    .btn-fetch-sm:hover { background: #ffe0b2; }
+    .btn-fetch-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-api-hdr {
+      padding: 5px 12px; border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.15); color: #fff;
+      font-family: inherit; font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap; transition: all 0.15s;
+    }
+    .btn-api-hdr:hover { background: rgba(255,255,255,0.25); }
+    .gas-code {
+      width: 100%; height: 340px;
+      font-family: 'Courier New', monospace; font-size: 0.72rem;
+      padding: 10px; border: 1px solid #bdbdbd; border-radius: 3px;
+      background: #1e1e1e; color: #d4d4d4;
+      resize: vertical; line-height: 1.5;
+    }
+    .step-box {
+      background: #f5f9ff; border: 1px solid #BBDEFB; border-radius: 4px;
+      padding: 10px 14px; margin-bottom: 10px; font-size: 0.78rem; line-height: 1.7;
+    }
+    .step-box b { color: #1565C0; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #212121; color: #fff;
+      padding: 10px 24px; border-radius: 4px;
+      font-size: 0.82rem; font-weight: 700;
+      z-index: 999; opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════ APP HEADER ══════════════════════ -->
+<header class="app-header">
+  <div class="app-title">LaunchBoard</div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn-sim" onclick="switchTab('sim')">損益分岐点</button>
+    <button class="tab-btn" id="tabBtn-tracker" onclick="switchTab('tracker')">リリース後</button>
+    <button class="tab-btn" id="tabBtn-data" onclick="switchTab('data')">データ確認</button>
+  </div>
+  <div class="hdr-right">
+    <button class="btn-ghost-hdr" id="hdr-tracker-add" style="display:none" onclick="openModal()">+ 商品を追加</button>
+  </div>
+</header>
+
+<!-- ══════════════════════ TAB 1: SIMULATOR ══════════════════════ -->
+<div class="tab-content active" id="tab-sim">
+  <div class="sim-body">
+
+    <!-- LEFT -->
+    <div>
+      <div class="card">
+        <h2>商品設定</h2>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0">
+            <label>商品名</label>
+            <input type="text" id="productName" placeholder="例：アラレ" oninput="update()">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>商品ID（任意）</label>
+            <input type="text" id="simProductId" placeholder="例: R001">
+          </div>
+        </div>
+        <div style="margin-bottom:12px;"></div>
+        <div class="field">
+          <label>販売価格（1個・税込）</label>
+          <input type="number" id="sellingPrice" placeholder="3980" min="0" oninput="update()">
+        </div>
+        <div class="field">
+          <label>仕入れ値（1個・シーレボの仕入れ値）</label>
+          <input type="number" id="costPrice" placeholder="800" min="0" oninput="update()">
+          <div class="hint">シーレボツールの「仕入れ値」をそのまま入力してください</div>
+        </div>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0">
+            <label>送料（実費・1個）</label>
+            <input type="number" id="shippingCost" placeholder="0" min="0" oninput="update()">
+            <div class="hint">実際に支払う配送料</div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>販売手数料率</label>
+            <select id="feeRate" onchange="update()">
+              <option value="0.08" selected>楽天・ヤフショ 8%</option>
+              <option value="0.10">10%</option>
+              <option value="0.065">6.5%</option>
+              <option value="0.15">Amazon 15%</option>
+              <option value="0">手数料なし</option>
+            </select>
+          </div>
+        </div>
+        <!-- 粗利内訳 -->
+        <div style="background:#f5f9ff;border:1px solid #BBDEFB;border-radius:3px;padding:10px 14px;margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:0.7rem;color:#757575;">販売価格</span>
+            <span style="font-size:0.78rem;font-weight:700;" id="breakdown-selling">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:0.7rem;color:#757575;">　－ 販売手数料</span>
+            <span style="font-size:0.78rem;color:var(--c-danger);" id="breakdown-fee">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:0.7rem;color:#757575;">　－ 送料（実費）</span>
+            <span style="font-size:0.78rem;color:var(--c-danger);" id="breakdown-shipping">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:0.7rem;color:#757575;">　－ 仕入れ値</span>
+            <span style="font-size:0.78rem;color:var(--c-danger);" id="breakdown-cost">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #BBDEFB;">
+            <span style="font-size:0.75rem;font-weight:700;color:#424242;">1個あたり粗利</span>
+            <span style="font-size:1.05rem;font-weight:700;" id="grossDisplay">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>初期投資コスト</h2>
+        <p class="section-note">リリースにかかったすべてのコストを入力してください</p>
+        <div class="cost-list" id="costList"></div>
+        <button class="btn-add" onclick="addCostItem()">+ コスト項目を追加</button>
+        <div class="total-bar">
+          <span class="t-label">初期投資 合計</span>
+          <span class="t-value" id="totalCostDisplay">¥0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>想定販売ペース（任意）</h2>
+        <p class="section-note">入力すると「何日 / 週 / ヶ月でプラス転換するか」を自動計算します</p>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0">
+            <label>販売個数</label>
+            <input type="number" id="paceValue" placeholder="10" min="1" oninput="update()">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>期間</label>
+            <select id="paceUnit" onchange="update()">
+              <option value="day">1日あたり</option>
+              <option value="week" selected>1週あたり</option>
+              <option value="month">1ヶ月あたり</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>仕入れロット設定（任意）</h2>
+        <p class="section-note">ロット別の損益分岐グラフを追加表示します</p>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0">
+            <label>第1ロット仕入れ数</label>
+            <input type="number" id="lot1" placeholder="10" min="1" oninput="update()">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>追加発注タイミング</label>
+            <select id="lotTrigger" onchange="update()">
+              <option value="0.333">1/3 売れたら</option>
+              <option value="0.5">1/2 売れたら</option>
+              <option value="0.25">1/4 売れたら</option>
+              <option value="1.0">全部売れたら</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>第2ロット仕入れ数</label>
+          <input type="number" id="lot2" placeholder="30" min="1" oninput="update()">
+        </div>
+        <div class="total-bar" id="lotSummaryBar" style="display:none">
+          <span class="t-label">総仕入れ数</span>
+          <span class="t-value" id="lotTotalDisplay">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <!-- トラッカーに追加バー -->
+      <div class="add-to-tracker-bar" id="addTrackerBar" style="display:none">
+        <div class="atb-msg">シミュレーションが完了しました。<strong>分析トラッカー</strong>に追加して発売後の回収を管理しましょう。</div>
+        <button class="btn-add-tracker" onclick="addSimToTracker()">▶ トラッカーに追加</button>
+      </div>
+
+      <div id="alertArea"></div>
+
+      <!-- 使ったお金の内訳 -->
+      <div id="outflowCard" class="outflow-card" style="display:none">
+        <div class="outflow-card-title">使ったお金の内訳</div>
+        <div id="outflowRows"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:2px solid #212121;">
+          <span style="font-size:1rem;font-weight:700;color:#212121;">合計（出ていったお金）</span>
+          <span style="font-size:1.9rem;font-weight:700;color:var(--c-danger);" id="outflowTotal">—</span>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div class="kpi-grid" id="kpiSection">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">損益分岐点</div>
+          <div class="kpi-value c-primary" id="kpi-breakeven">—</div>
+          <div class="kpi-unit">個でプラス転換</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">1個あたり粗利</div>
+          <div class="kpi-value" id="kpi-gross">—</div>
+          <div class="kpi-unit">円 / 個</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">粗利率</div>
+          <div class="kpi-value" id="kpi-margin">—</div>
+          <div class="kpi-unit">%</div>
+        </div>
+        <div class="kpi-card success-highlight" id="kpi-recovery-card" style="display:none">
+          <div class="kpi-label" id="kpi-recovery-label">回収期間</div>
+          <div class="kpi-value c-success" id="kpi-recovery">—</div>
+          <div class="kpi-unit" id="kpi-recovery-unit">でプラス転換</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h2>累計損益グラフ — 販売個数ベース</h2>
+        <p class="chart-desc">横軸：累計販売個数 ／ 縦軸：累計損益（初期投資を回収しながら推移）</p>
+        <div class="chart-wrap"><canvas id="unitsChart"></canvas></div>
+      </div>
+
+      <div class="chart-card" id="timeChartCard" style="display:none">
+        <h2>累計損益グラフ — 時系列ベース</h2>
+        <p class="chart-desc" id="timeChartDesc">横軸：リリースからの経過時間 ／ 縦軸：累計損益</p>
+        <div class="chart-wrap"><canvas id="timeChart"></canvas></div>
+      </div>
+
+      <div class="chart-card" id="breakdownCard" style="display:none">
+        <h2>初期投資 内訳</h2>
+        <table class="breakdown-table" id="breakdownTable"></table>
+      </div>
+
+      <div id="lotSection" style="display:none">
+        <div class="kpi-grid" style="margin-bottom:14px;">
+          <div class="kpi-card highlight">
+            <div class="kpi-label">第1ロットのみ 損益分岐</div>
+            <div class="kpi-value c-primary" id="kpi-lot1-be">—</div>
+            <div class="kpi-unit" id="kpi-lot1-be-unit">個で回収</div>
+          </div>
+          <div class="kpi-card" style="border-left:3px solid var(--c-warn);background:#FFF8E1;">
+            <div class="kpi-label">第2ロット追加後 損益分岐</div>
+            <div class="kpi-value c-warn" id="kpi-lot2-be">—</div>
+            <div class="kpi-unit" id="kpi-lot2-be-unit">個で回収</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">追加発注タイミング</div>
+            <div class="kpi-value" id="kpi-trigger">—</div>
+            <div class="kpi-unit">個目売れた時点で発注</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">総投資額（仕入れ代金+固定費）</div>
+            <div class="kpi-value" id="kpi-total-invest">—</div>
+            <div class="kpi-unit">円</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h2>キャッシュフロー推移 — ロット別</h2>
+          <p class="chart-desc">仕入れ代金・初期投資をすべて含んだ現金収支の推移。第2ロット発注時点でいったん下がり、その後回収していきます。</p>
+          <div class="chart-wrap" style="height:320px;"><canvas id="lotChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /sim-body -->
+</div><!-- /tab-sim -->
+
+<!-- ══════════════════════ TAB 2: TRACKER ══════════════════════ -->
+<div class="tab-content" id="tab-tracker">
+  <div class="controls-bar">
+    <span class="ctrl-label">期間タイプ</span>
+    <select class="ctrl-select" id="periodType" onchange="onPeriodTypeChange()">
+      <option value="week">週次</option>
+      <option value="month">月次</option>
+      <option value="custom">カスタム</option>
+    </select>
+    <div class="ctrl-divider"></div>
+    <input type="text" class="ctrl-input" id="customLabel" placeholder="カスタム期間名" style="display:none">
+    <button class="btn-ctrl-white" onclick="addPeriod()">+ 期間を追加</button>
+    <span style="font-size:0.68rem;color:rgba(255,255,255,0.65);margin-left:4px;" id="periodHint">クリックで「第1週」「第2週」…を自動追加</span>
+    <div style="flex:1"></div>
+    <button class="btn-api-hdr" onclick="openGasScript()">📋 GASスクリプト</button>
+    <button class="btn-api-hdr" onclick="openApiSettings()">⚙ API設定</button>
+  </div>
+  <div class="board-area">
+    <div class="table-outer">
+      <table id="mainTable">
+        <thead id="tHead"></thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ TRACKER MODAL ══════════════════════ -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="onOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span id="modalTitle">商品を追加</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="f-row">
+        <div class="f-field">
+          <label>商品名 *</label>
+          <input type="text" id="fName" placeholder="例: アラレ" oninput="refreshPreview()">
+        </div>
+        <div class="f-field">
+          <label>商品ID（任意）</label>
+          <input type="text" id="fPid" placeholder="例: R001">
+        </div>
+      </div>
+      <div class="f-section">1個あたりの単価設定</div>
+      <div class="f-row">
+        <div class="f-field">
+          <label>販売価格（円・1個）*</label>
+          <input type="number" id="fPrice" placeholder="3980" min="0" oninput="refreshPreview()">
+        </div>
+        <div class="f-field">
+          <label>仕入れ値（円・1個）*</label>
+          <input type="number" id="fCost" placeholder="800" min="0" oninput="refreshPreview()">
+          <div class="hint">シーレボの仕入れ値をそのまま入力</div>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <label>送料（実費・1個）</label>
+          <input type="number" id="fShip" placeholder="0" min="0" oninput="refreshPreview()">
+        </div>
+        <div class="f-field">
+          <label>販売手数料率</label>
+          <select id="fFee" onchange="refreshPreview()">
+            <option value="0.08" selected>楽天・ヤフショ 8%</option>
+            <option value="0.10">10%</option>
+            <option value="0.065">6.5%</option>
+            <option value="0.15">Amazon 15%</option>
+            <option value="0">なし</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-section">楽天API連携（自動取得用）</div>
+      <div class="f-row">
+        <div class="f-field">
+          <label style="color:#C62828;">リリース日</label>
+          <input type="date" id="fReleaseDate">
+          <div class="hint">期間ごとの日付範囲の基準になります</div>
+        </div>
+        <div class="f-field">
+          <label style="color:#C62828;">楽天アカウント</label>
+          <select id="fRakutenAccount"></select>
+        </div>
+      </div>
+      <div class="f-field">
+        <label style="color:#C62828;">楽天 商品管理番号</label>
+        <input type="text" id="fRakutenId" placeholder="例: item-001">
+        <div class="hint">楽天RMSの商品管理番号</div>
+      </div>
+      <div class="f-section">初期投資（一時コスト）</div>
+      <div class="f-field">
+        <label>初期固定費 合計（外注費・デザイン費・販促費など）</label>
+        <input type="number" id="fFixed" placeholder="0" min="0" oninput="refreshPreview()">
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <label>第1ロット仕入れ数</label>
+          <input type="number" id="fLot1" placeholder="0" min="0" oninput="refreshPreview()">
+        </div>
+        <div class="f-field">
+          <label>第2ロット仕入れ数</label>
+          <input type="number" id="fLot2" placeholder="0" min="0" oninput="refreshPreview()">
+        </div>
+      </div>
+      <div class="calc-preview">
+        <div class="calc-row">
+          <span class="calc-lbl">入金額 / 個（販売価格 − 手数料 − 送料）</span>
+          <span class="calc-val" id="pvIncome">—</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-lbl">総投資額（固定費 + 仕入れ代金合計）</span>
+          <span class="calc-val" id="pvInvest">—</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-lbl">損益分岐点</span>
+          <span class="calc-val" id="pvBE" style="color:#1565C0">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-trk btn-trk-white" onclick="closeModal()">キャンセル</button>
+      <button class="btn-trk btn-trk-primary" onclick="saveProduct()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ TAB 3: DATA CHECK ══════════════════════ -->
+<div class="tab-content" id="tab-data">
+  <div style="padding:20px;flex:1;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:1rem;font-weight:700;color:#1565C0;">取得データ確認</h2>
+      <div style="display:flex;gap:8px;">
+        <button onclick="renderDataCheck()" style="padding:6px 14px;background:#e3f2fd;color:#1565C0;border:1px solid #90CAF9;border-radius:4px;font-family:inherit;font-size:0.82rem;cursor:pointer;">更新</button>
+        <button onclick="exportCsv()" style="padding:6px 14px;background:#1565C0;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:0.82rem;cursor:pointer;">CSVダウンロード</button>
+      </div>
+    </div>
+    <div id="dataCheckTable"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ API設定 MODAL ══════════════════════ -->
+<div class="modal-overlay" id="apiModal" style="display:none" onclick="if(event.target===this)closeApiSettings()">
+  <div class="modal-box" style="width:min(480px,96vw)">
+    <div class="modal-hd">
+      <span>⚙ API設定（GAS連携）</span>
+      <button class="modal-close" onclick="closeApiSettings()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="step-box">
+        楽天アカウントごとにGASをデプロイし、URLを登録してください。<br>
+        <b>GASスクリプト</b>は「📋 GASスクリプト」ボタンからコピーできます。
+      </div>
+      <div id="apiAccountList"></div>
+      <button onclick="addApiAccount()" style="width:100%;padding:7px;border:1px dashed #1976D2;background:#f5f9ff;color:#1565C0;font-family:inherit;font-size:0.78rem;font-weight:700;cursor:pointer;border-radius:3px;">+ アカウントを追加</button>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-trk btn-trk-white" onclick="closeApiSettings()">キャンセル</button>
+      <button class="btn-trk btn-trk-primary" onclick="saveApiSettingsForm()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ GASスクリプト MODAL ══════════════════════ -->
+<div class="modal-overlay" id="gasModal" style="display:none" onclick="if(event.target===this)closeGasScript()">
+  <div class="modal-box" style="width:min(680px,96vw)">
+    <div class="modal-hd">
+      <span>📋 Google Apps Script — セットアップ手順</span>
+      <button class="modal-close" onclick="closeGasScript()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="step-box">
+        <b>Step 1.</b> <a href="https://script.google.com" target="_blank" style="color:#1565C0">script.google.com</a> → 新しいプロジェクト を開く<br>
+        <b>Step 2.</b> 下のコードを全選択してGASに貼り付け → 保存<br>
+        <b>Step 3.</b> GAS左メニュー「プロジェクトの設定」→「スクリプト プロパティ」に以下を追加：<br>
+        &nbsp;&nbsp;&nbsp;・<b>SERVICE_SECRET</b>: 楽天RMSのサービスシークレット<br>
+        &nbsp;&nbsp;&nbsp;・<b>LICENSE_KEY</b>: 楽天RMSのライセンスキー<br>
+        <b>Step 4.</b> 「デプロイ」→「新しいデプロイ」→「ウェブアプリ」→「全員」がアクセス可能 → デプロイ<br>
+        <b>Step 5.</b> 発行されたURLを「⚙ API設定」に貼り付け
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.78rem;font-weight:700;color:#424242;">GASコード（コピーして貼り付け）</span>
+        <button class="btn-trk btn-trk-primary" style="font-size:0.72rem;padding:5px 12px" onclick="copyGasCode()">コピー</button>
+      </div>
+      <textarea class="gas-code" id="gasCodeArea" readonly></textarea>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-trk btn-trk-primary" onclick="closeGasScript()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   SHARED UTILITIES
+══════════════════════════════════════ */
+function fmt(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+function escHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const esc = escHtml;
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ══════════════════════════════════════
+   TAB SWITCHING
+══════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('tabBtn-' + tab).classList.add('active');
+  document.getElementById('hdr-tracker-add').style.display = tab === 'tracker' ? '' : 'none';
+  if (tab === 'tracker') render();
+  if (tab === 'data') renderDataCheck();
+}
+
+function renderDataCheck() {
+  const el = document.getElementById('dataCheckTable');
+  if (!el) return;
+  if (state.products.length === 0 || state.periods.length === 0) {
+    el.innerHTML = '<p style="color:#757575;font-size:0.88rem;">商品または期間がありません。トラッカータブで追加してください。</p>';
+    return;
+  }
+  const cols = ['商品名','商品ID','楽天アカウント', ...state.periods.map(p => p.label + ' 販売数'), ...state.periods.map(p => p.label + ' 累計損益（円）')];
+  const rows = state.products.map(p => {
+    const acc = apiSettings.accounts.find(a => a.id === p.rakutenAccountId);
+    const accName = acc ? acc.name : '楽天1';
+    const salesCols = state.periods.map(per => p.sales[per.id] || 0);
+    let cumSales = 0;
+    const pnlCols = state.periods.map((per, idx) => {
+      cumSales += (p.sales[per.id] || 0);
+      const revenue = cumSales * (p.unitIncome || 0);
+      const cost = (p.fixedCost || 0) + (p.lot1 || 0) * (p.unitCost || 0) + (p.shippingCost || 0) * (p.lot1 || 0);
+      return revenue - cost;
+    });
+    return [p.name, p.productId || '', accName, ...salesCols, ...pnlCols];
+  });
+
+  let html = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:0.8rem;white-space:nowrap;width:100%;">';
+  html += '<thead><tr>' + cols.map(c => `<th style="background:#1565C0;color:#fff;padding:7px 12px;text-align:left;border:1px solid #0D47A1;">${c}</th>`).join('') + '</tr></thead>';
+  html += '<tbody>' + rows.map((r, i) => {
+    const bg = i % 2 === 0 ? '#fff' : '#f5f9ff';
+    return '<tr>' + r.map((v, ci) => {
+      const isNum = ci >= 3;
+      const style = `background:${bg};padding:6px 12px;border:1px solid #e0e0e0;${isNum ? 'text-align:right;' : ''}`;
+      const disp = (ci >= 3 + state.periods.length) ? '¥' + Number(v).toLocaleString() : v;
+      return `<td style="${style}">${disp}</td>`;
+    }).join('') + '</tr>';
+  }).join('') + '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function exportCsv() {
+  if (state.products.length === 0) { alert('データがありません'); return; }
+  const cols = ['商品名','商品ID','楽天アカウント', ...state.periods.map(p => p.label + '販売数'), ...state.periods.map(p => p.label + '累計損益')];
+  const rows = state.products.map(p => {
+    const acc = apiSettings.accounts.find(a => a.id === p.rakutenAccountId);
+    const accName = acc ? acc.name : '楽天1';
+    const salesCols = state.periods.map(per => p.sales[per.id] || 0);
+    let cumSales = 0;
+    const pnlCols = state.periods.map(per => {
+      cumSales += (p.sales[per.id] || 0);
+      const revenue = cumSales * (p.unitIncome || 0);
+      const cost = (p.fixedCost || 0) + (p.lot1 || 0) * (p.unitCost || 0) + (p.shippingCost || 0) * (p.lot1 || 0);
+      return revenue - cost;
+    });
+    return [p.name, p.productId || '', accName, ...salesCols, ...pnlCols];
+  });
+  const csv = [cols, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'rakuten_sales_data.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ══════════════════════════════════════
+   SIMULATOR JS
+══════════════════════════════════════ */
+let costItems = [
+  { label: '外注費',       amount: '' },
+  { label: 'デザイン費',   amount: '' },
+  { label: '販促・支援費', amount: '' },
+];
+let unitsChartInst = null;
+let timeChartInst  = null;
+let lotChartInst   = null;
+
+function renderCostList() {
+  const list = document.getElementById('costList');
+  list.innerHTML = costItems.map((item, i) => `
+    <div class="cost-item">
+      <input type="text" placeholder="項目名" value="${escHtml(item.label)}"
+        oninput="costItems[${i}].label=this.value;update()">
+      <input type="number" class="amount-input" placeholder="金額（円）" value="${item.amount}"
+        oninput="costItems[${i}].amount=this.value;update()" min="0">
+      <button class="btn-remove" onclick="removeCostItem(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function addCostItem() { costItems.push({ label:'', amount:'' }); renderCostList(); update(); }
+function removeCostItem(i) { costItems.splice(i,1); renderCostList(); update(); }
+function parseNum(v) { const n = parseFloat(String(v).replace(/,/g,'')); return isNaN(n)||!isFinite(n)?0:n; }
+function calcTotalCost() { return costItems.reduce((s,c) => s + parseNum(c.amount), 0); }
+
+function update() {
+  const sellingPrice = parseNum(document.getElementById('sellingPrice').value);
+  const costPrice    = parseNum(document.getElementById('costPrice').value);
+  const shippingCost = parseNum(document.getElementById('shippingCost').value);
+  const feeRate      = parseNum(document.getElementById('feeRate').value);
+  const totalCost    = calcTotalCost();
+
+  document.getElementById('totalCostDisplay').textContent = fmt(totalCost);
+
+  const feeAmount   = sellingPrice * feeRate;
+  const grossProfit = sellingPrice - feeAmount - shippingCost - costPrice;
+  const marginRate  = sellingPrice > 0 ? (grossProfit / sellingPrice * 100) : 0;
+
+  const grossEl = document.getElementById('grossDisplay');
+  if (sellingPrice > 0) {
+    grossEl.textContent = fmt(grossProfit);
+    grossEl.style.color = grossProfit > 0 ? '#1565C0' : '#C62828';
+    document.getElementById('breakdown-selling').textContent  = fmt(sellingPrice);
+    document.getElementById('breakdown-fee').textContent      = '－' + fmt(feeAmount);
+    document.getElementById('breakdown-shipping').textContent = '－' + fmt(shippingCost);
+    document.getElementById('breakdown-cost').textContent     = '－' + fmt(costPrice);
+  } else {
+    grossEl.textContent = '—'; grossEl.style.color = '#1565C0';
+    ['breakdown-selling','breakdown-fee','breakdown-shipping','breakdown-cost'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+  }
+
+  const alertArea = document.getElementById('alertArea');
+  alertArea.innerHTML = '';
+  document.getElementById('addTrackerBar').style.display = 'none';
+
+  if (sellingPrice <= 0) {
+    alertArea.innerHTML = `<div class="alert info">販売価格と仕入れ値を入力すると自動計算が始まります。</div>`;
+    clearCharts(); resetKPIs(); return;
+  }
+  if (grossProfit <= 0) {
+    alertArea.innerHTML = `<div class="alert danger">粗利がマイナスです。販売価格・手数料・送料・仕入れ値を見直してください。（現在: ${fmt(grossProfit)}）</div>`;
+    clearCharts(); resetKPIs(); return;
+  }
+  if (totalCost <= 0) {
+    alertArea.innerHTML = `<div class="alert warn">初期投資コストを入力するとシミュレーションが開始されます。</div>`;
+    document.getElementById('breakdownCard').style.display = 'none';
+    clearCharts(); resetKPIs(); return;
+  }
+
+  const breakEvenUnits = Math.ceil(totalCost / grossProfit);
+  const breakEvenSales = breakEvenUnits * sellingPrice;
+
+  document.getElementById('kpi-breakeven').textContent = breakEvenUnits.toLocaleString('ja-JP');
+  document.getElementById('kpi-gross').textContent     = Math.round(grossProfit).toLocaleString('ja-JP');
+  document.getElementById('kpi-margin').textContent    = marginRate.toFixed(1);
+
+  const paceValue = parseNum(document.getElementById('paceValue').value);
+  const paceUnit  = document.getElementById('paceUnit').value;
+  const paceCard  = document.getElementById('kpi-recovery-card');
+  const timeCard  = document.getElementById('timeChartCard');
+
+  if (paceValue >= 1) {
+    paceCard.style.display = ''; timeCard.style.display = '';
+    const perDay = paceUnit === 'day' ? paceValue : paceUnit === 'week' ? paceValue/7 : paceValue/30;
+    const daysToBreakEven = breakEvenUnits / perDay;
+    let recoveryText, recoveryUnit;
+    if (paceUnit === 'day') {
+      recoveryText = Math.ceil(daysToBreakEven).toLocaleString('ja-JP');
+      recoveryUnit = '日でプラス転換';
+    } else if (paceUnit === 'week') {
+      const w = daysToBreakEven / 7;
+      recoveryText = w < 1 ? '1週未満' : Math.ceil(w).toLocaleString('ja-JP');
+      recoveryUnit = w < 1 ? '1週未満でプラス転換' : '週でプラス転換';
+    } else {
+      const m = daysToBreakEven / 30;
+      recoveryText = m < 1 ? '1ヶ月未満' : Math.ceil(m).toLocaleString('ja-JP');
+      recoveryUnit = m < 1 ? '1ヶ月未満でプラス転換' : 'ヶ月でプラス転換';
+    }
+    document.getElementById('kpi-recovery').textContent      = recoveryText;
+    document.getElementById('kpi-recovery-unit').textContent = recoveryUnit;
+    renderTimeChart(totalCost, grossProfit, perDay, daysToBreakEven, paceUnit, paceValue);
+  } else {
+    paceCard.style.display = 'none'; timeCard.style.display = 'none';
+  }
+
+  renderUnitsChart(totalCost, grossProfit, breakEvenUnits, sellingPrice);
+  renderBreakdown(totalCost, grossProfit, breakEvenUnits, breakEvenSales);
+  updateLotAnalysis(totalCost, costPrice, shippingCost, feeRate, sellingPrice);
+  updateOutflowSummary(totalCost, costPrice, sellingPrice);
+
+  // Show "トラッカーに追加" bar
+  const pname = document.getElementById('productName').value.trim();
+  if (pname) document.getElementById('addTrackerBar').style.display = '';
+}
+
+function resetKPIs() {
+  ['kpi-breakeven','kpi-gross','kpi-margin','kpi-recovery'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '—';
+  });
+  document.getElementById('kpi-recovery-card').style.display = 'none';
+  document.getElementById('timeChartCard').style.display = 'none';
+  document.getElementById('lotSection').style.display = 'none';
+  document.getElementById('outflowCard').style.display = 'none';
+}
+
+function clearCharts() {
+  if (unitsChartInst) { unitsChartInst.destroy(); unitsChartInst = null; }
+  if (timeChartInst)  { timeChartInst.destroy();  timeChartInst  = null; }
+  if (lotChartInst)   { lotChartInst.destroy();   lotChartInst   = null; }
+}
+
+function renderUnitsChart(totalCost, grossProfit, breakEvenUnits) {
+  const canvas = document.getElementById('unitsChart');
+  if (unitsChartInst) { unitsChartInst.destroy(); }
+  const maxUnits = Math.max(breakEvenUnits * 2, 20);
+  const step     = Math.max(1, Math.ceil(maxUnits / 60));
+  const labels = [], data = [];
+  for (let u = 0; u <= maxUnits; u += step) { labels.push(u); data.push(Math.round(u * grossProfit - totalCost)); }
+  if (!labels.includes(breakEvenUnits)) {
+    const idx = labels.findIndex(l => l > breakEvenUnits);
+    if (idx >= 0) { labels.splice(idx, 0, breakEvenUnits); data.splice(idx, 0, 0); }
+  }
+  const ptColors = data.map(v => v >= 0 ? 'rgba(46,125,50,0.9)' : 'rgba(198,40,40,0.9)');
+  const ptRadius = data.map((v,i) => {
+    if (i === 0) return 0;
+    const prev = data[i-1];
+    return (prev < 0 && v >= 0) || (prev >= 0 && v < 0) ? 6 : 0;
+  });
+  unitsChartInst = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets: [{
+      label: '累計損益', data,
+      borderColor: ctx => {
+        const { ctx: c, chartArea } = ctx.chart;
+        if (!chartArea) return '#1565C0';
+        const g = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+        g.addColorStop(0, 'rgba(198,40,40,0.8)');
+        g.addColorStop(breakEvenUnits / Math.max(...labels), '#F57C00');
+        g.addColorStop(Math.min(1,(breakEvenUnits / Math.max(...labels))+0.01), 'rgba(46,125,50,0.9)');
+        g.addColorStop(1, 'rgba(46,125,50,0.9)');
+        return g;
+      },
+      backgroundColor: ctx => {
+        const { ctx: c, chartArea } = ctx.chart;
+        if (!chartArea) return 'rgba(21,101,192,0.05)';
+        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        g.addColorStop(0, 'rgba(46,125,50,0.12)'); g.addColorStop(0.45, 'rgba(21,101,192,0.04)'); g.addColorStop(1, 'rgba(198,40,40,0.1)');
+        return g;
+      },
+      fill: true, tension: 0.15, borderWidth: 2.5,
+      pointRadius: ptRadius, pointBackgroundColor: ptColors, pointBorderColor: ptColors, pointHoverRadius: 5,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: ctx => `${ctx[0].label.toLocaleString('ja-JP')}個販売時`,
+          label: ctx => ctx.raw === 0 ? '損益分岐点（0円）' : ctx.raw > 0 ? `累計利益: ${fmt(ctx.raw)}` : `未回収: ${fmt(Math.abs(ctx.raw))}`
+        }},
+        annotation: { annotations: {
+          zeroLine: { type:'line', yMin:0, yMax:0, borderColor:'#9e9e9e', borderWidth:1, borderDash:[3,3] },
+          beL: { type:'line',
+            xMin: labels.indexOf(breakEvenUnits), xMax: labels.indexOf(breakEvenUnits),
+            borderColor:'#F57C00', borderWidth:2, borderDash:[5,4],
+            label: { content:`損益分岐: ${breakEvenUnits.toLocaleString('ja-JP')}個`, display:true, position:'start',
+              backgroundColor:'#F57C00', color:'#fff', font:{size:10,weight:'bold'}, padding:{x:7,y:3}, borderRadius:3 }
+          }
+        }}
+      },
+      scales: {
+        x: { title:{display:true,text:'累計販売個数',font:{size:10,weight:'bold'},color:'#757575'}, ticks:{font:{size:9},color:'#757575',maxTicksLimit:12}, grid:{color:'#f5f5f5'} },
+        y: { title:{display:true,text:'累計損益（円）',font:{size:10,weight:'bold'},color:'#757575'},
+          ticks:{font:{size:9},color:'#757575',callback:v=>{ const a=Math.abs(v); return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP'); }},
+          grid:{color:'#f5f5f5'} }
+      }
+    }
+  });
+}
+
+function renderTimeChart(totalCost, grossProfit, perDay, daysToBreakEven, paceUnit, paceValue) {
+  const canvas = document.getElementById('timeChart');
+  if (timeChartInst) { timeChartInst.destroy(); }
+  const totalDays = Math.max(Math.ceil(daysToBreakEven * 1.7), 14);
+  const stepDays  = Math.max(1, Math.ceil(totalDays / 50));
+  const labels = [], data = [];
+  const labelFn = d => paceUnit==='day' ? `${d}日` : paceUnit==='week' ? (d===0?'0週':`${Math.ceil(d/7)}週`) : `${(d/30).toFixed(1)}ヶ月`;
+  for (let d=0; d<=totalDays; d+=stepDays) { labels.push(labelFn(d)); data.push(Math.round(d*perDay*grossProfit-totalCost)); }
+  const ptColors = data.map(v => v>=0?'rgba(46,125,50,0.9)':'rgba(198,40,40,0.9)');
+  const beDataIdx = Math.round(daysToBreakEven/stepDays);
+  const beLabel = paceUnit==='day'?`${Math.ceil(daysToBreakEven)}日でプラス転換`:paceUnit==='week'?`${Math.ceil(daysToBreakEven/7)}週でプラス転換`:`${Math.ceil(daysToBreakEven/30)}ヶ月でプラス転換`;
+  timeChartInst = new Chart(canvas, {
+    type:'line',
+    data:{labels,datasets:[{label:'累計損益',data,
+      borderColor:ctx=>{const{ctx:c,chartArea}=ctx.chart;if(!chartArea)return'#1565C0';const g=c.createLinearGradient(chartArea.left,0,chartArea.right,0);const r=Math.min(beDataIdx/labels.length,1);g.addColorStop(0,'rgba(198,40,40,0.8)');g.addColorStop(Math.max(0,r-0.01),'#F57C00');g.addColorStop(Math.min(1,r+0.01),'rgba(46,125,50,0.9)');g.addColorStop(1,'rgba(46,125,50,0.9)');return g;},
+      backgroundColor:ctx=>{const{ctx:c,chartArea}=ctx.chart;if(!chartArea)return'rgba(21,101,192,0.05)';const g=c.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,'rgba(46,125,50,0.12)');g.addColorStop(0.5,'rgba(21,101,192,0.04)');g.addColorStop(1,'rgba(198,40,40,0.1)');return g;},
+      fill:true,tension:0.15,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:ptColors}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>ctx.raw>=0?`累計利益: ${fmt(ctx.raw)}`:`未回収: ${fmt(Math.abs(ctx.raw))}`}},
+        annotation:{annotations:{
+          zeroLine:{type:'line',yMin:0,yMax:0,borderColor:'#9e9e9e',borderWidth:1,borderDash:[3,3]},
+          beV:{type:'line',xMin:beDataIdx,xMax:beDataIdx,borderColor:'#F57C00',borderWidth:2,borderDash:[5,4],
+            label:{content:beLabel,display:true,position:'start',backgroundColor:'#F57C00',color:'#fff',font:{size:10,weight:'bold'},padding:{x:7,y:3},borderRadius:3}}
+        }}},
+      scales:{
+        x:{title:{display:true,text:'リリースからの経過時間',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',maxTicksLimit:10},grid:{color:'#f5f5f5'}},
+        y:{title:{display:true,text:'累計損益（円）',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',callback:v=>{const a=Math.abs(v);return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP');}},grid:{color:'#f5f5f5'}}
+      }}
+  });
+  const pl=paceUnit==='day'?'日':paceUnit==='week'?'週':'ヶ月';
+  document.getElementById('timeChartDesc').textContent=`横軸：リリースからの経過時間 ／ 想定ペース: ${paceValue}個 / ${pl}`;
+}
+
+function updateOutflowSummary(fixedCost, unitCost, sellingPrice) {
+  const lot1=parseNum(document.getElementById('lot1').value);
+  const lot2=parseNum(document.getElementById('lot2').value);
+  const card=document.getElementById('outflowCard');
+  const lot1Cost=lot1>0?lot1*unitCost:0;
+  const lot2Cost=(lot1>0&&lot2>0)?lot2*unitCost:0;
+  const total=fixedCost+lot1Cost+lot2Cost;
+  if(total<=0){card.style.display='none';return;}
+  card.style.display='';
+  const rows=[];
+  costItems.filter(c=>parseNum(c.amount)>0).forEach(c=>{rows.push({label:c.label||'（項目名未入力）',sub:null,amount:parseNum(c.amount)});});
+  if(lot1>0&&unitCost>0) rows.push({label:'第1ロット 仕入れ代金',sub:`${lot1}個 × ${fmt(unitCost)}`,amount:lot1Cost});
+  if(lot1>0&&lot2>0&&unitCost>0) rows.push({label:'第2ロット 仕入れ代金',sub:`${lot2}個 × ${fmt(unitCost)}`,amount:lot2Cost});
+  document.getElementById('outflowRows').innerHTML=rows.map((r,i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;${i>0?'border-top:1px solid #f0f0f0;':''}">
+      <div>
+        <div style="font-size:0.82rem;color:#424242;font-weight:700;">${escHtml(r.label)}</div>
+        ${r.sub?`<div style="font-size:0.68rem;color:#9e9e9e;margin-top:1px;">${escHtml(r.sub)}</div>`:''}
+      </div>
+      <div style="font-size:0.95rem;font-weight:700;color:#212121;white-space:nowrap;">${fmt(r.amount)}</div>
+    </div>`).join('');
+  document.getElementById('outflowTotal').textContent=fmt(total);
+}
+
+function renderBreakdown(totalCost, grossProfit, breakEvenUnits, breakEvenSales) {
+  const card=document.getElementById('breakdownCard');
+  const table=document.getElementById('breakdownTable');
+  const valid=costItems.filter(c=>parseNum(c.amount)>0);
+  if(!valid.length){card.style.display='none';return;}
+  card.style.display='';
+  const rows=valid.map(c=>{const amt=parseNum(c.amount);const pct=totalCost>0?(amt/totalCost*100).toFixed(1):'0.0';const units=Math.ceil(amt/grossProfit);return`<tr><td>${escHtml(c.label||'（未入力）')}</td><td>${fmt(amt)}</td><td>${pct}%</td><td>${units.toLocaleString('ja-JP')}個</td></tr>`;}).join('');
+  table.innerHTML=`<thead><tr><th>項目</th><th style="text-align:right">金額</th><th style="text-align:right">構成比</th><th style="text-align:right">回収個数</th></tr></thead><tbody>${rows}<tr class="total-row"><td>合計</td><td>${fmt(totalCost)}</td><td>100%</td><td>${breakEvenUnits.toLocaleString('ja-JP')}個</td></tr></tbody>`;
+}
+
+function updateLotAnalysis(fixedCost, unitCost, shippingCost, feeRate, sellingPrice) {
+  const lot1=parseNum(document.getElementById('lot1').value);
+  const lot2=parseNum(document.getElementById('lot2').value);
+  const trigger=parseNum(document.getElementById('lotTrigger').value);
+  const section=document.getElementById('lotSection');
+  const summBar=document.getElementById('lotSummaryBar');
+  if(lot1<1){section.style.display='none';summBar.style.display='none';return;}
+  summBar.style.display='';
+  document.getElementById('lotTotalDisplay').textContent=(lot1+(lot2>0?lot2:0)).toLocaleString('ja-JP')+'個';
+  const incomePerUnit=sellingPrice*(1-feeRate)-shippingCost;
+  const lot1Cost=lot1*unitCost;
+  const totalCost1=fixedCost+lot1Cost;
+  const be1=incomePerUnit>0?Math.ceil(totalCost1/incomePerUnit):Infinity;
+  const triggerUnits=Math.ceil(lot1*trigger);
+  const lot2Cost=lot2>0?lot2*unitCost:0;
+  const totalCost2=fixedCost+lot1Cost+lot2Cost;
+  const be2=incomePerUnit>0?Math.ceil(totalCost2/incomePerUnit):Infinity;
+  section.style.display='';
+  document.getElementById('kpi-lot1-be').textContent=isFinite(be1)?be1.toLocaleString('ja-JP'):'—';
+  document.getElementById('kpi-lot2-be').textContent=(lot2>0&&isFinite(be2))?be2.toLocaleString('ja-JP'):'—';
+  document.getElementById('kpi-trigger').textContent=triggerUnits.toLocaleString('ja-JP');
+  document.getElementById('kpi-total-invest').textContent=fmt(totalCost2).replace('¥','');
+  if(!isFinite(be1))return;
+  renderLotChart(fixedCost,unitCost,incomePerUnit,lot1,lot1Cost,lot2,lot2Cost,triggerUnits,be1,be2);
+}
+
+function renderLotChart(fixedCost,unitCost,incomePerUnit,lot1,lot1Cost,lot2,lot2Cost,triggerUnits,be1,be2) {
+  const canvas=document.getElementById('lotChart');
+  if(lotChartInst){lotChartInst.destroy();}
+  const maxUnits=Math.max(be2>0?be2*1.4:be1*1.6,lot1+(lot2||0)+10);
+  const step=Math.max(1,Math.ceil(maxUnits/80));
+  const labels=[],dataLot1=[],dataLot2=[];
+  const hasLot2=lot2>0;
+  for(let u=0;u<=maxUnits;u+=step){
+    labels.push(u);
+    dataLot1.push(Math.round(-(fixedCost+lot1Cost)+u*incomePerUnit));
+    if(hasLot2){const d=u>=triggerUnits?lot2Cost:0;dataLot2.push(Math.round(-(fixedCost+lot1Cost+d)+u*incomePerUnit));}
+  }
+  const datasets=[{label:`第1ロットのみ（${lot1}個）`,data:dataLot1,borderColor:'#1565C0',backgroundColor:'rgba(21,101,192,0.04)',fill:false,tension:0,borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4}];
+  if(hasLot2)datasets.push({label:`第1+2ロット（${lot1+lot2}個）`,data:dataLot2,borderColor:'#E65100',backgroundColor:'rgba(230,81,0,0.05)',fill:false,tension:0,borderWidth:2.5,pointRadius:0,pointHoverRadius:4});
+  const triggerIdx=labels.findIndex(l=>l>=triggerUnits);
+  const annotations={zeroLine:{type:'line',yMin:0,yMax:0,borderColor:'#9e9e9e',borderWidth:1,borderDash:[3,3]}};
+  if(hasLot2&&triggerIdx>=0)annotations.trig={type:'line',xMin:triggerIdx,xMax:triggerIdx,borderColor:'#7B1FA2',borderWidth:2,borderDash:[4,4],label:{content:`第2ロット発注（${triggerUnits}個目）`,display:true,position:'end',backgroundColor:'#7B1FA2',color:'#fff',font:{size:9,weight:'bold'},padding:{x:6,y:3},borderRadius:3}};
+  const be1Idx=labels.findIndex(l=>l>=be1);
+  if(be1Idx>=0)annotations.be1={type:'line',xMin:be1Idx,xMax:be1Idx,borderColor:'#1565C0',borderWidth:1.5,borderDash:[3,3],label:{content:`ロット1回収 ${be1}個`,display:true,position:'start',backgroundColor:'#1565C0',color:'#fff',font:{size:9,weight:'bold'},padding:{x:6,y:3},borderRadius:3}};
+  if(hasLot2&&isFinite(be2)){const be2Idx=labels.findIndex(l=>l>=be2);if(be2Idx>=0)annotations.be2={type:'line',xMin:be2Idx,xMax:be2Idx,borderColor:'#E65100',borderWidth:2,borderDash:[5,4],label:{content:`ロット1+2回収 ${be2}個`,display:true,position:'start',backgroundColor:'#E65100',color:'#fff',font:{size:9,weight:'bold'},padding:{x:6,y:3},borderRadius:3}};}
+  lotChartInst=new Chart(canvas,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:true,labels:{font:{size:11,family:"'BIZ UDPGothic',sans-serif"},boxWidth:20}},
+      tooltip:{callbacks:{title:ctx=>`${ctx[0].label}個販売時`,label:ctx=>{const v=ctx.raw;return`${ctx.dataset.label}: ${v>=0?fmt(v):'未回収 '+fmt(Math.abs(v))}`}}},
+      annotation:{annotations}},
+    scales:{x:{title:{display:true,text:'累計販売個数',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',maxTicksLimit:12},grid:{color:'#f5f5f5'}},
+      y:{title:{display:true,text:'累計キャッシュ（円）',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',callback:v=>{const a=Math.abs(v);return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP');}},grid:{color:'#f5f5f5'}}}}});
+}
+
+/* ══════════════════════════════════════
+   BRIDGE: Simulator → Tracker
+══════════════════════════════════════ */
+function addSimToTracker() {
+  const name  = document.getElementById('productName').value.trim();
+  const pid   = document.getElementById('simProductId').value.trim();
+  const price = parseNum(document.getElementById('sellingPrice').value);
+  const cost  = parseNum(document.getElementById('costPrice').value);
+  const ship  = parseNum(document.getElementById('shippingCost').value);
+  const fee   = parseNum(document.getElementById('feeRate').value);
+  const fixed = calcTotalCost();
+  const lot1  = parseNum(document.getElementById('lot1').value);
+  const lot2  = parseNum(document.getElementById('lot2').value);
+
+  if (!name)      { alert('商品名を入力してください'); return; }
+  if (price <= 0) { alert('販売価格を入力してください'); return; }
+
+  const income = price * (1 - fee) - ship;
+  const invest = fixed + (lot1 + lot2) * cost;
+  const be     = income > 0 && invest > 0 ? Math.ceil(invest / income) : 0;
+
+  state.products.push({
+    id: uid(), name, productId: pid, sellingPrice: price,
+    unitCost: cost, shippingCost: ship, feeRate: fee, fixedCost: fixed,
+    lot1, lot2, unitIncome: income, totalInvest: invest,
+    breakEvenUnits: be, sales: {}
+  });
+
+  save(); render();
+  switchTab('tracker');
+  showToast(`「${name}」をトラッカーに追加しました`);
+}
+
+/* ══════════════════════════════════════
+   TRACKER JS
+══════════════════════════════════════ */
+let state = {
+  periodType: 'week', periodCounter: 0,
+  periods: [], products: [],
+};
+let editingId = null;
+
+function save() { try { localStorage.setItem('ltracker_v1', JSON.stringify(state)); } catch(e){} }
+function load() {
+  try { const s=localStorage.getItem('ltracker_v1'); if(s) state=Object.assign(state,JSON.parse(s)); } catch(e) {}
+}
+
+function pn(v) { const n=parseFloat(String(v||0).replace(/,/g,'')); return isNaN(n)||!isFinite(n)?0:n; }
+
+function calcProduct(price,cost,ship,fee,fixed,lot1,lot2) {
+  const income=price*(1-fee)-ship;
+  const invest=fixed+(lot1+lot2)*cost;
+  const be=income>0&&invest>0?Math.ceil(invest/income):0;
+  return{income,invest,be};
+}
+function cumUnits(prod,upToIdx) {
+  let t=0;
+  for(let i=0;i<=upToIdx;i++) t+=(prod.sales[state.periods[i]?.id]||0);
+  return t;
+}
+function cumPnL(prod,upToIdx) { return cumUnits(prod,upToIdx)*prod.unitIncome-prod.totalInvest; }
+
+function onPeriodTypeChange() {
+  state.periodType=document.getElementById('periodType').value;
+  const isC=state.periodType==='custom';
+  document.getElementById('customLabel').style.display=isC?'':'none';
+  const hints={week:'「第1週」「第2週」…を自動追加',month:'「第1ヶ月」「第2ヶ月」…を自動追加',custom:'ラベルを入力してから追加'};
+  document.getElementById('periodHint').textContent=hints[state.periodType];
+  save();
+}
+
+function addPeriod() {
+  state.periodCounter++;
+  let label;
+  if(state.periodType==='week') label=`第${state.periodCounter}週`;
+  else if(state.periodType==='month') label=`第${state.periodCounter}ヶ月`;
+  else { label=document.getElementById('customLabel').value.trim()||`第${state.periodCounter}期`; document.getElementById('customLabel').value=''; }
+  state.periods.push({id:uid(),label});
+  save(); render();
+}
+
+function delPeriod(pid) {
+  if(!confirm('この期間を削除しますか？入力済みの販売数も消えます。'))return;
+  state.periods=state.periods.filter(p=>p.id!==pid);
+  state.products.forEach(pr=>delete pr.sales[pid]);
+  if(state.periods.length===0) state.periodCounter=0;
+  save(); render();
+}
+
+function openModal(id=null) {
+  editingId=id;
+  document.getElementById('modalTitle').textContent=id?'商品を編集':'商品を追加';
+  ['fName','fPid','fPrice','fCost','fShip','fFixed','fLot1','fLot2','fReleaseDate','fRakutenId'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('fFee').value='0.08';
+  updateAccountSelectors();
+  if(id){
+    const p=state.products.find(p=>p.id===id);
+    if(p){
+      document.getElementById('fName').value=p.name;
+      document.getElementById('fPid').value=p.productId;
+      document.getElementById('fPrice').value=p.sellingPrice;
+      document.getElementById('fCost').value=p.unitCost;
+      document.getElementById('fShip').value=p.shippingCost;
+      document.getElementById('fFee').value=p.feeRate;
+      document.getElementById('fFixed').value=p.fixedCost;
+      document.getElementById('fLot1').value=p.lot1||'';
+      document.getElementById('fLot2').value=p.lot2||'';
+      document.getElementById('fReleaseDate').value=p.releaseDate||'';
+      document.getElementById('fRakutenId').value=p.rakutenItemId||'';
+      if(p.rakutenAccountId) document.getElementById('fRakutenAccount').value=p.rakutenAccountId;
+    }
+  }
+  refreshPreview();
+  document.getElementById('modal').style.display='flex';
+}
+function closeModal() { document.getElementById('modal').style.display='none'; }
+function onOverlayClick(e) { if(e.target===document.getElementById('modal'))closeModal(); }
+
+function refreshPreview() {
+  const price=pn(document.getElementById('fPrice').value);
+  const cost=pn(document.getElementById('fCost').value);
+  const ship=pn(document.getElementById('fShip').value);
+  const fee=pn(document.getElementById('fFee').value);
+  const fixed=pn(document.getElementById('fFixed').value);
+  const lot1=pn(document.getElementById('fLot1').value);
+  const lot2=pn(document.getElementById('fLot2').value);
+  const{income,invest,be}=calcProduct(price,cost,ship,fee,fixed,lot1,lot2);
+  document.getElementById('pvIncome').textContent=price>0?fmt(income):'—';
+  document.getElementById('pvInvest').textContent=invest>0?fmt(invest):'—';
+  document.getElementById('pvBE').textContent=be>0?`${be.toLocaleString('ja-JP')}個`:'—';
+}
+
+function saveProduct() {
+  const name=document.getElementById('fName').value.trim();
+  const pid=document.getElementById('fPid').value.trim();
+  const price=pn(document.getElementById('fPrice').value);
+  const cost=pn(document.getElementById('fCost').value);
+  const ship=pn(document.getElementById('fShip').value);
+  const fee=pn(document.getElementById('fFee').value);
+  const fixed=pn(document.getElementById('fFixed').value);
+  const lot1=pn(document.getElementById('fLot1').value);
+  const lot2=pn(document.getElementById('fLot2').value);
+  if(!name){alert('商品名は必須です');return;}
+  if(price<=0){alert('販売価格を入力してください');return;}
+  const{income,invest,be}=calcProduct(price,cost,ship,fee,fixed,lot1,lot2);
+  const releaseDate      = document.getElementById('fReleaseDate').value;
+  const rakutenItemId    = document.getElementById('fRakutenId').value.trim();
+  const rakutenAccountId = document.getElementById('fRakutenAccount').value;
+  if(editingId){
+    const p=state.products.find(p=>p.id===editingId);
+    if(p) Object.assign(p,{name,productId:pid,sellingPrice:price,unitCost:cost,shippingCost:ship,feeRate:fee,fixedCost:fixed,lot1,lot2,unitIncome:income,totalInvest:invest,breakEvenUnits:be,releaseDate,rakutenItemId,rakutenAccountId});
+  }else{
+    state.products.push({id:uid(),name,productId:pid,sellingPrice:price,unitCost:cost,shippingCost:ship,feeRate:fee,fixedCost:fixed,lot1,lot2,unitIncome:income,totalInvest:invest,breakEvenUnits:be,releaseDate,rakutenItemId,rakutenAccountId,sales:{}});
+  }
+  save(); closeModal(); render();
+}
+
+function delProduct(id) {
+  if(!confirm('この商品を削除しますか？'))return;
+  state.products=state.products.filter(p=>p.id!==id);
+  save(); render();
+}
+
+function onSalesChange(productId,periodId,val) {
+  const p=state.products.find(p=>p.id===productId);
+  if(!p)return;
+  const v=pn(val);
+  if(v>0) p.sales[periodId]=v; else delete p.sales[periodId];
+  save(); refreshRow(p);
+}
+
+function refreshRow(p) {
+  state.periods.forEach((period,idx)=>{
+    const el=document.getElementById(`pnl-${p.id}-${period.id}`);
+    if(el) el.innerHTML=pnlHtml(p,idx);
+  });
+}
+
+function pnlHtml(p,idx) {
+  const cu=cumUnits(p,idx);
+  const pnl=cumPnL(p,idx);
+  const isP=pnl>=0;
+  const pct=p.totalInvest>0?Math.min(100,Math.round(cu*p.unitIncome/p.totalInvest*100)):0;
+  const prevPnl=idx>0?cumPnL(p,idx-1):-p.totalInvest;
+  const achieved=prevPnl<0&&pnl>=0;
+  const cls=isP?'pos':'neg';
+  return`<div class="pnl-box ${cls}"><span class="pnl-amount ${cls}">${isP?'+':''}${fmt(pnl)}${achieved?'<span class="badge-ok">達成!</span>':''}</span><div class="pnl-bar-bg"><div class="pnl-bar-fill ${cls}" style="width:${pct}%"></div></div><div class="pnl-detail">${cu}個売れた / 目標${p.breakEvenUnits>0?p.breakEvenUnits+'個':'—'} (${pct}%)</div></div>`;
+}
+
+function render() {
+  const head=document.getElementById('tHead');
+  const body=document.getElementById('tBody');
+  const nP=state.periods.length;
+  const totalCols=6+nP*2+1;
+  let r1=`<tr><th class="th-name" rowspan="2" style="text-align:left;">商品名</th><th rowspan="2">商品ID</th><th rowspan="2">損益分岐<br>（個）</th><th rowspan="2">総投資額</th><th rowspan="2">入金額<br>/個</th>`;
+  state.periods.forEach(p=>{r1+=`<th class="th-period-header" colspan="2">${esc(p.label)}<span class="period-x" onclick="delPeriod('${p.id}')" title="削除">✕</span></th>`;});
+  r1+=`<th class="th-actions" rowspan="2">操作</th></tr>`;
+  let r2='<tr>';
+  state.periods.forEach(()=>{r2+=`<th class="th-sub">販売数</th><th class="th-sub">累計損益</th>`;});
+  r2+='</tr>';
+  head.innerHTML=r1+r2;
+  if(state.products.length===0){
+    body.innerHTML=`<tr><td class="td-empty" colspan="${totalCols}">右上の「商品を追加」から商品を登録してください<br><span style="font-size:0.75rem;color:#bdbdbd;">シミュレーターで分析後「▶ トラッカーに追加」ボタンでも追加できます</span></td></tr>`;
+    return;
+  }
+  body.innerHTML=state.products.map(p=>{
+    const pCells=state.periods.map((period,idx)=>{
+      const sv=p.sales[period.id]||'';
+      return`<td class="td-sales"><input class="sales-input" type="number" min="0" placeholder="0" value="${esc(String(sv))}" onchange="onSalesChange('${p.id}','${period.id}',this.value)" title="${esc(period.label)} の販売数"></td><td class="td-pnl" id="pnl-${p.id}-${period.id}">${pnlHtml(p,idx)}</td>`;
+    }).join('');
+    const canFetch = !!(p.rakutenItemId && p.releaseDate);
+    return`<tr><td class="td-name"><div class="pname">${esc(p.name)}</div>${p.productId?`<div class="psub">${esc(p.productId)}</div>`:''}</td><td class="td-id">${esc(p.productId||'—')}</td><td class="td-be">${p.breakEvenUnits>0?p.breakEvenUnits.toLocaleString('ja-JP')+'個':'—'}</td><td class="td-invest">${p.totalInvest>0?fmt(p.totalInvest):'—'}</td><td class="td-income">${fmt(p.unitIncome)}</td>${pCells}<td class="td-actions" style="text-align:center;white-space:nowrap;padding:6px 8px;"><button id="fetch-btn-${p.id}" class="btn-fetch-sm" onclick="fetchRakutenSales('${p.id}')" title="${canFetch?'楽天APIから自動取得':'編集でリリース日と商品番号を設定'}" ${canFetch?'':'style="opacity:0.45"'}>楽天から取得</button><div style="margin-top:5px"><button class="btn-edit-sm" onclick="openModal('${p.id}')">編集</button> <button class="btn-danger-sm" onclick="delProduct('${p.id}')">削除</button></div></td></tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   RAKUTEN API — GAS PROXY
+══════════════════════════════════════ */
+let apiSettings = {
+  accounts: [
+    { id: 'acc1', name: '楽天1', gasUrl: '' },
+    { id: 'acc2', name: '楽天2', gasUrl: '' }
+  ]
+};
+
+function loadApiSettings() {
+  try {
+    const s = localStorage.getItem('rakuten_api_v2');
+    if (s) {
+      const loaded = JSON.parse(s);
+      // 既存の単一URL設定から移行
+      if (loaded.gasUrl && !loaded.accounts) {
+        apiSettings.accounts[0].gasUrl = loaded.gasUrl;
+      } else if (loaded.accounts) {
+        apiSettings = loaded;
+      }
+    } else {
+      // 旧フォーマット(v1)から移行
+      const old = localStorage.getItem('rakuten_api_v1');
+      if (old) { const o=JSON.parse(old); if(o.gasUrl) apiSettings.accounts[0].gasUrl=o.gasUrl; }
+    }
+  } catch(e){}
+}
+function saveApiSettings() {
+  try { localStorage.setItem('rakuten_api_v2', JSON.stringify(apiSettings)); } catch(e){}
+}
+function openApiSettings() {
+  renderApiAccountList();
+  document.getElementById('apiModal').style.display='flex';
+}
+function closeApiSettings() { document.getElementById('apiModal').style.display='none'; }
+
+function renderApiAccountList() {
+  const container = document.getElementById('apiAccountList');
+  container.innerHTML = apiSettings.accounts.map((acc, i) => `
+    <div style="margin-bottom:12px;padding:10px 12px;background:#f5f9ff;border:1px solid #BBDEFB;border-radius:4px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input type="text" value="${escHtml(acc.name)}" placeholder="アカウント名（例: 楽天1）"
+          style="flex:1;padding:6px 9px;border:1px solid #bdbdbd;border-radius:3px;font-family:inherit;font-size:0.82rem;"
+          oninput="apiSettings.accounts[${i}].name=this.value;updateAccountSelectors()">
+        ${apiSettings.accounts.length > 1
+          ? `<button onclick="removeApiAccount(${i})" style="padding:4px 8px;background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:3px;font-size:0.7rem;cursor:pointer;">削除</button>`
+          : ''}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="url" value="${escHtml(acc.gasUrl)}" placeholder="GAS Web App URL (https://script.google.com/macros/s/...)"
+          style="flex:1;padding:6px 9px;border:1px solid #bdbdbd;border-radius:3px;font-family:inherit;font-size:0.78rem;"
+          oninput="apiSettings.accounts[${i}].gasUrl=this.value.trim()">
+        <button onclick="testGasConnection(${i})" style="white-space:nowrap;padding:5px 10px;background:#e3f2fd;color:#1565C0;border:1px solid #90CAF9;border-radius:3px;font-size:0.72rem;cursor:pointer;">接続テスト</button>
+      </div>
+      <div id="gas-test-result-${i}" style="font-size:0.72rem;margin-top:4px;display:none;"></div>
+    </div>
+  `).join('');
+}
+
+function addApiAccount() {
+  apiSettings.accounts.push({ id: 'acc'+Date.now(), name: `楽天${apiSettings.accounts.length+1}`, gasUrl: '' });
+  renderApiAccountList();
+  updateAccountSelectors();
+}
+function removeApiAccount(i) {
+  apiSettings.accounts.splice(i, 1);
+  renderApiAccountList();
+  updateAccountSelectors();
+}
+async function testGasConnection(i) {
+  const acc = apiSettings.accounts[i];
+  const resultEl = document.getElementById(`gas-test-result-${i}`);
+  if (!resultEl) return;
+  if (!acc.gasUrl) {
+    resultEl.style.display='block'; resultEl.style.color='#c62828';
+    resultEl.textContent='URLが入力されていません'; return;
+  }
+  if (!acc.gasUrl.startsWith('https://script.google.com/')) {
+    resultEl.style.display='block'; resultEl.style.color='#c62828';
+    resultEl.textContent='URLが正しくありません（https://script.google.com/macros/s/.../exec の形式）'; return;
+  }
+  if (!acc.gasUrl.includes('/exec')) {
+    resultEl.style.display='block'; resultEl.style.color='#E65100';
+    resultEl.textContent='⚠ URLに /exec が含まれていません。/dev URLは認証が必要で使用不可です。デプロイURLをコピーし直してください'; return;
+  }
+  resultEl.style.display='block'; resultEl.style.color='#1565C0'; resultEl.textContent='テスト中…';
+  try {
+    // no-cors モード: CORSエラーを回避してネットワーク到達確認のみ
+    await fetch(acc.gasUrl, { method: 'GET', mode: 'no-cors' });
+    resultEl.style.color='#2E7D32';
+    resultEl.textContent='✓ URLに到達できました。「楽天から取得」を試してください';
+  } catch(e) {
+    resultEl.style.color='#c62828';
+    resultEl.textContent='✗ 到達不可: URLを再確認するか、GASを再デプロイしてください';
+  }
+}
+function saveApiSettingsForm() {
+  saveApiSettings();
+  closeApiSettings();
+  updateAccountSelectors();
+  showToast('API設定を保存しました');
+}
+
+// 商品モーダルのアカウント選択を更新
+function updateAccountSelectors() {
+  const sel = document.getElementById('fRakutenAccount');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = apiSettings.accounts.map(a =>
+    `<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`
+  ).join('');
+  if (cur) sel.value = cur;
+}
+
+const GAS_CODE = `// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// しょぷー 楽天販売数 自動取得 GASプロキシ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 【設定】プロジェクト設定 → スクリプト プロパティ に追加:
+//   SERVICE_SECRET = 楽天RMSのサービスシークレット
+//   LICENSE_KEY    = 楽天RMSのライセンスキー
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function doPost(e) {
+  try {
+    if (!e) return jsonRes({ success: false, error: 'イベントオブジェクトがありません。エディタから直接実行しないでください' });
+    // form-encoded（新）とJSON body（旧）の両方に対応
+    let params;
+    const body = e.postData ? e.postData.contents : '';
+    if (e.parameter && e.parameter.data) {
+      params = JSON.parse(e.parameter.data);
+    } else if (body && body.startsWith('{')) {
+      params = JSON.parse(body);
+    } else if (body && body.includes('data=')) {
+      const match = body.match(/(?:^|&)data=([^&]*)/);
+      if (match) params = JSON.parse(decodeURIComponent(match[1].split('+').join(' ')));
+      else return jsonRes({ success: false, error: 'データの解析に失敗しました' });
+    } else {
+      return jsonRes({ success: false, error: 'データが受信できませんでした: ' + body });
+    }
+    const { itemNumber, periods } = params;
+
+    const props = PropertiesService.getScriptProperties();
+    const serviceSecret = props.getProperty('SERVICE_SECRET');
+    const licenseKey    = props.getProperty('LICENSE_KEY');
+
+    if (!serviceSecret || !licenseKey) {
+      return jsonRes({ success: false, error: 'スクリプトプロパティに SERVICE_SECRET / LICENSE_KEY を設定してください' });
+    }
+
+    const auth = Utilities.base64Encode(serviceSecret + ':' + licenseKey);
+
+    // 全期間をカバーする日付範囲を算出
+    const allDates = periods.flatMap(p => [p.start, p.end]);
+    const minDate  = allDates.reduce((a,b) => a < b ? a : b);
+    const maxDate  = allDates.reduce((a,b) => a > b ? a : b);
+
+    // 楽天APIから注文一覧を全ページ取得
+    const result = fetchAllOrders(auth, minDate, maxDate);
+    const orders = result.orders;
+
+    // 期間ごとに販売数を集計
+    const units = periods.map(period => {
+      let cnt = 0;
+      orders.forEach(order => {
+        const d = (order.orderDatetime || '').substring(0,10);
+        if (d >= period.start && d <= period.end) {
+          (order.PackageModelList || []).forEach(pkg => {
+            (pkg.ItemModelList || []).forEach(item => {
+              if (item.manageNumber === itemNumber || item.itemNumber === itemNumber) {
+                cnt += (item.units || 1);
+              }
+            });
+          });
+        }
+      });
+      return cnt;
+    });
+
+    // デバッグ: 注文内の商品管理番号サンプルを返す
+    const sampleNums = orders.slice(0,5).flatMap(o =>
+      (o.PackageModelList||[]).flatMap(p =>
+        (p.ItemModelList||[]).map(i => i.manageNumber || i.itemNumber || '(空)')
+      )
+    ).slice(0,10);
+    return jsonRes({ success: true, units, debug: { ordersFound: orders.length, searchCount: result.searchCount, searchedFor: itemNumber, sampleManageNumbers: sampleNums, apiResponse: result.debugRaw } });
+
+  } catch(err) {
+    Logger.log('error: ' + err.toString());
+    return jsonRes({ success: false, error: err.toString() });
+  }
+}
+
+function fetchAllOrders(auth, startDate, endDate) {
+  const headers = {
+    'Authorization': 'ESA ' + auth,
+    'Content-Type': 'application/json;charset=utf-8'
+  };
+
+  // Step1: searchOrder で注文番号リストを取得
+  const allOrderNumbers = [];
+  let debugRaw = '';
+  let page = 1;
+  while (true) {
+    const res = UrlFetchApp.fetch('https://api.rms.rakuten.co.jp/es/2.0/order/searchOrder/', {
+      method: 'post', headers,
+      payload: JSON.stringify({
+        dateType: 2,
+        startDatetime: startDate + 'T00:00:00+0900',
+        endDatetime:   endDate   + 'T23:59:59+0900',
+        PaginationRequestModel: { requestRecordsAmount: 100, requestPage: page }
+      }),
+      muteHttpExceptions: true
+    });
+    const text = res.getContentText();
+    if (page === 1) debugRaw = 'HTTP ' + res.getResponseCode() + ': ' + text.substring(0, 500);
+    const data = JSON.parse(text);
+    const nums = data.orderNumberList || [];
+    if (nums.length === 0) break;
+    allOrderNumbers.push(...nums);
+    const pg = data.PaginationResponseModel;
+    if (!pg || page >= (pg.totalPages || 1)) break;
+    page++;
+  }
+
+  if (allOrderNumbers.length === 0) {
+    return { orders: [], searchCount: 0, debugRaw: debugRaw };
+  }
+
+  // Step2: getOrder で注文詳細（商品情報）を取得
+  // versionパラメータを自動検出（0,1,3,4,5を順に試す）
+  const allOrders = [];
+  let getOrderDebug = '';
+  let workingVersion = null;
+
+  // 最初の1件でversionを自動検出
+  const testChunk = allOrderNumbers.slice(0, 1);
+  for (const v of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100, 200]) {
+    const testRes = UrlFetchApp.fetch('https://api.rms.rakuten.co.jp/es/2.0/order/getOrder/', {
+      method: 'post', headers,
+      payload: JSON.stringify({ orderNumberList: testChunk, version: v }),
+      muteHttpExceptions: true
+    });
+    const testText = testRes.getContentText();
+    const testData = JSON.parse(testText);
+    const hasError = (testData.MessageModelList || []).some(m => m.messageType === 'ERROR');
+    if (!hasError) {
+      workingVersion = v;
+      const list = testData.OrderModelList || testData.orderModelList || [];
+      allOrders.push(...list);
+      break;
+    }
+    getOrderDebug = 'v' + v + ' → HTTP' + testRes.getResponseCode() + ': ' + testText.substring(0, 200);
+  }
+
+  if (workingVersion === null) {
+    return { orders: [], searchCount: allOrderNumbers.length, debugRaw: 'getOrder version検出失敗: ' + getOrderDebug };
+  }
+
+  // 残りのチャンクを取得
+  for (let i = 1; i < allOrderNumbers.length; i += 100) {
+    const chunk = allOrderNumbers.slice(i, i + 100);
+    const res = UrlFetchApp.fetch('https://api.rms.rakuten.co.jp/es/2.0/order/getOrder/', {
+      method: 'post', headers,
+      payload: JSON.stringify({ orderNumberList: chunk, version: workingVersion }),
+      muteHttpExceptions: true
+    });
+    const data = JSON.parse(res.getContentText());
+    const list = data.OrderModelList || data.orderModelList || [];
+    allOrders.push(...list);
+  }
+  return { orders: allOrders, searchCount: allOrderNumbers.length, debugRaw: null };
+}
+
+function jsonRes(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet() {
+  return ContentService.createTextOutput('GASプロキシ稼働中').setMimeType(ContentService.MimeType.TEXT);
+}`;
+
+function openGasScript() {
+  document.getElementById('gasCodeArea').value = GAS_CODE;
+  document.getElementById('gasModal').style.display='flex';
+}
+function closeGasScript() { document.getElementById('gasModal').style.display='none'; }
+function copyGasCode() {
+  const el = document.getElementById('gasCodeArea');
+  el.select();
+  document.execCommand('copy');
+  showToast('GASコードをコピーしました');
+}
+
+// 期間の日付範囲を計算
+function periodDateStr(d) { return d.toISOString().substring(0,10); }
+function calcPeriodDates(releaseDate, idx, periodType) {
+  const s = new Date(releaseDate); s.setHours(0,0,0,0);
+  if (periodType === 'month') {
+    s.setMonth(s.getMonth() + idx);
+    const e = new Date(s); e.setMonth(e.getMonth()+1); e.setDate(e.getDate()-1);
+    return { start: periodDateStr(s), end: periodDateStr(e) };
+  } else { // week or custom
+    s.setDate(s.getDate() + idx*7);
+    const e = new Date(s); e.setDate(e.getDate()+6);
+    return { start: periodDateStr(s), end: periodDateStr(e) };
+  }
+}
+
+// 楽天から販売数取得
+async function fetchRakutenSales(productId) {
+  const p = state.products.find(p=>p.id===productId);
+  if (!p) return;
+  if (!p.releaseDate)   { alert('リリース日を設定してください（商品「編集」から設定できます）'); return; }
+  if (!p.rakutenItemId) { alert('楽天商品管理番号を設定してください（商品「編集」から設定できます）'); return; }
+
+  const account = apiSettings.accounts.find(a => a.id === p.rakutenAccountId) || apiSettings.accounts[0];
+  if (!account?.gasUrl) { alert('GAS URLを設定してください（「⚙ API設定」ボタンから設定できます）'); return; }
+  if (!account.gasUrl.startsWith('https://script.google.com/')) {
+    alert(`GAS URLの形式が正しくありません。\nhttps://script.google.com/macros/s/.../exec の形式で入力してください`);
+    return;
+  }
+  if (!account.gasUrl.includes('/exec')) {
+    alert(`URLに /exec が含まれていません。\n「デプロイを管理」からコピーしたURLを使ってください（/dev は認証が必要なため使用不可です）`);
+    return;
+  }
+  if (state.periods.length === 0) { alert('期間を追加してください'); return; }
+
+  const btn = document.getElementById('fetch-btn-'+productId);
+  if (btn) { btn.textContent='取得中…'; btn.disabled=true; }
+
+  try {
+    const periods = state.periods.map((_,idx) => calcPeriodDates(p.releaseDate, idx, state.periodType));
+
+    let res;
+    try {
+      // application/x-www-form-urlencoded はCORSプリフライト不要（シンプルリクエスト）
+      const payload = new URLSearchParams({ data: JSON.stringify({ itemNumber: p.rakutenItemId, periods }) });
+      res = await fetch(account.gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload.toString()
+      });
+    } catch(networkErr) {
+      throw new Error(
+        `ネットワーク接続エラー（${account.name}）\n\n` +
+        `GAS管理画面で以下を確認してください:\n` +
+        `① デプロイ → アクセス:「全員」になっているか\n` +
+        `② GASコードを最新版（📋 GASスクリプト）に更新して再デプロイ`
+      );
+    }
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error||'APIエラー');
+
+    // デバッグ情報を表示（全部0のとき）
+    if (data.debug && data.units.every(u => u === 0)) {
+      const d = data.debug;
+      alert(`販売数が0件でした。\n\n[Step1] searchOrderで見つかった注文番号数: ${d.searchCount ?? '不明'}件\n[Step2] getOrderで取得できた注文数: ${d.ordersFound}件\n検索した商品管理番号: 「${d.searchedFor}」\n楽天注文内の商品管理番号（例）:\n${(d.sampleManageNumbers||[]).join('\n') || '（注文なし）'}\n\n--- getOrder APIレスポンス ---\n${d.apiResponse||'（Step1で0件のため未実行）'}`);
+    }
+
+    data.units.forEach((units, idx) => {
+      const period = state.periods[idx]; if (!period) return;
+      if (units > 0) p.sales[period.id] = units;
+      else delete p.sales[period.id];
+    });
+
+    save(); render();
+    showToast(`「${p.name}」の販売数を取得しました`);
+  } catch(err) {
+    alert('取得エラー: ' + err.message);
+    if (btn) { btn.textContent='楽天から取得'; btn.disabled=false; }
+  }
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  // Simulator init
+  renderCostList();
+  update();
+  // Tracker init
+  load();
+  loadApiSettings();
+  updateAccountSelectors();
+  document.getElementById('periodType').value = state.periodType;
+  onPeriodTypeChange();
+  render();
+});
+</script>
+</body>
+</html>
