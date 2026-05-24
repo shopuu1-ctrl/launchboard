@@ -354,9 +354,18 @@
         <div class="d-row d-total"><span>= 円換算</span><span id="d-jpy">-</span></div>
       </div>
     </li>
-    <li>
-      <span class="lbl">国際送料</span>
+    <li class="li-product" id="li-shipping">
+      <span class="lbl-wrap">
+        <span class="lbl">国際送料</span>
+        <span class="chevron">▼</span>
+      </span>
       <span class="val minus" id="r-shipping">-</span>
+      <div class="product-detail" id="shipping-detail">
+        <div class="d-row"><span>重量</span><span id="d-weight">-</span></div>
+        <div class="d-row"><span>× 送料単価</span><span id="d-srate">-</span></div>
+        <div class="d-row"><span>× 為替レート</span><span id="d-srate-fx">-</span></div>
+        <div class="d-row d-total"><span>= 国際送料</span><span id="d-ship">-</span></div>
+      </div>
     </li>
     <li>
       <span class="lbl">代行手数料</span>
@@ -452,9 +461,13 @@
     var isOk       = margin >= 30;
 
     setText('r-product',  fmt(productJpy));
-    setText('d-cny',  productCny.toLocaleString() + ' 元');
-    setText('d-rate', rate + ' 円/元');
-    setText('d-jpy',  fmt(productJpy));
+    setText('d-cny',    productCny.toLocaleString() + ' 元');
+    setText('d-rate',   rate + ' 円/元');
+    setText('d-jpy',    fmt(productJpy));
+    setText('d-weight', weightG.toLocaleString() + ' g (' + (weightG / 1000).toFixed(3) + ' kg)');
+    setText('d-srate',  shippingPer + ' 元/kg');
+    setText('d-srate-fx', rate + ' 円/元');
+    setText('d-ship',  fmt(shipping));
     setText('r-shipping', '-' + fmt(shipping));
     setText('r-agency',   '-' + fmt(agency));
     setText('r-duty',     '-' + fmt(duty));
@@ -504,6 +517,9 @@
   document.getElementById('resetBtn').addEventListener('click', reset);
 
   document.getElementById('li-product').addEventListener('click', function() {
+    this.classList.toggle('open');
+  });
+  document.getElementById('li-shipping').addEventListener('click', function() {
     this.classList.toggle('open');
   });
 }());
