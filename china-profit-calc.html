@@ -24,7 +24,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", sans-serif;
       background: var(--bg);
       color: var(--value);
       min-height: 100vh;
@@ -32,12 +32,11 @@
     }
 
     h1 {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 700;
       text-align: center;
       margin-bottom: 18px;
       color: var(--primary);
-      letter-spacing: .02em;
     }
 
     .card {
@@ -65,8 +64,6 @@
       gap: 12px;
     }
 
-    .field-grid.single { grid-template-columns: 1fr; }
-
     .field {
       display: flex;
       flex-direction: column;
@@ -88,7 +85,6 @@
       color: var(--value);
       background: #fff;
       width: 100%;
-      transition: border-color .15s;
       -webkit-appearance: none;
     }
 
@@ -96,7 +92,6 @@
     .field select:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(26,111,196,.12);
     }
 
     .field .unit {
@@ -110,10 +105,9 @@
       align-items: flex-end;
     }
 
-    .shipping-row .field:first-child { flex: 0 0 auto; min-width: 120px; }
-    .shipping-row .field:last-child { flex: 1; }
+    .shipping-row .field:first-child { flex: 0 0 130px; }
+    .shipping-row .field:last-child  { flex: 1; }
 
-    /* ---- Calc button ---- */
     .calc-btn {
       width: 100%;
       padding: 14px;
@@ -124,33 +118,24 @@
       font-size: 1.05rem;
       font-weight: 700;
       cursor: pointer;
-      letter-spacing: .04em;
-      transition: background .15s, transform .1s;
       margin-bottom: 14px;
     }
 
-    .calc-btn:active { background: #155ba0; transform: scale(.98); }
-
-    /* ---- Result card ---- */
     #result { display: none; }
 
     .verdict {
       text-align: center;
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: 800;
       border-radius: 10px;
       padding: 14px 0;
       margin-bottom: 16px;
-      letter-spacing: .04em;
     }
 
-    .verdict.ok  { background: var(--ok-bg);  color: var(--ok); }
-    .verdict.ng  { background: var(--ng-bg);  color: var(--ng); }
+    .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+    .verdict.ng { background: var(--ng-bg); color: var(--ng); }
 
-    .breakdown {
-      list-style: none;
-      border-top: 1px solid var(--border);
-    }
+    .breakdown { list-style: none; }
 
     .breakdown li {
       display: flex;
@@ -162,65 +147,63 @@
       gap: 8px;
     }
 
-    .breakdown li .label { color: var(--label); }
-    .breakdown li .val   { font-weight: 600; white-space: nowrap; }
+    .breakdown li .lbl { color: var(--label); }
+    .breakdown li .val { font-weight: 600; white-space: nowrap; }
     .breakdown li .val.minus { color: var(--ng); }
-    .breakdown li.total {
+
+    .breakdown li.total-row {
       font-size: 1rem;
       font-weight: 700;
-      padding: 12px 0 4px;
+      padding-top: 12px;
       border-bottom: none;
     }
-    .breakdown li.cost-total .val { color: var(--ng); }
+
+    .breakdown li.cost-row .val  { color: var(--ng); }
     .breakdown li.profit-row .val { color: var(--ok); }
-    .breakdown li.profit-row.loss .val { color: var(--ng); }
+    .breakdown li.profit-neg .val { color: var(--ng); }
 
-    .margin-bar-wrap {
-      margin: 14px 0 0;
-    }
+    .bar-wrap { margin-top: 14px; }
 
-    .margin-bar-label {
+    .bar-label {
       font-size: .75rem;
       color: var(--muted);
-      margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
+      margin-bottom: 4px;
     }
 
-    .margin-bar {
+    .bar-bg {
       height: 10px;
       border-radius: 99px;
       background: var(--border);
       overflow: hidden;
     }
 
-    .margin-bar-fill {
+    .bar-fill {
       height: 100%;
       border-radius: 99px;
-      transition: width .4s ease;
-      background: var(--primary);
+      width: 0%;
     }
 
-    .margin-bar-fill.ok { background: var(--ok); }
-    .margin-bar-fill.ng { background: var(--ng); }
+    .bar-fill.ok { background: var(--ok); }
+    .bar-fill.ng { background: var(--ng); }
 
-    .threshold-line {
+    .bar-marker {
       position: relative;
       height: 14px;
       margin-top: 2px;
     }
 
-    .threshold-line::before {
+    .bar-marker::before {
       content: "30%";
       position: absolute;
       left: 30%;
       transform: translateX(-50%);
       font-size: .65rem;
       color: var(--muted);
-      top: 0;
     }
 
-    .threshold-line::after {
+    .bar-marker::after {
       content: "";
       position: absolute;
       left: 30%;
@@ -243,8 +226,6 @@
       margin-top: 4px;
     }
 
-    .reset-btn:active { opacity: .7; }
-
     @media (max-width: 360px) {
       .field-grid { grid-template-columns: 1fr; }
     }
@@ -252,9 +233,8 @@
 </head>
 <body>
 
-<h1>🇨🇳 中国輸入 利益計算ツール</h1>
+<h1>中国輸入 利益計算ツール</h1>
 
-<!-- 仕入れ情報 -->
 <div class="card">
   <div class="card-title">仕入れ情報</div>
   <div class="field-grid">
@@ -266,7 +246,7 @@
     <div class="field">
       <label>商品重量</label>
       <input type="number" id="weight" placeholder="0" min="0" step="1">
-      <span class="unit">g（グラム）</span>
+      <span class="unit">g</span>
     </div>
     <div class="field">
       <label>為替レート</label>
@@ -286,17 +266,16 @@
   </div>
 </div>
 
-<!-- 国際送料 -->
 <div class="card">
   <div class="card-title">国際送料</div>
   <div class="shipping-row">
     <div class="field">
-      <label>業者選択</label>
-      <select id="carrier" onchange="onCarrierChange()">
-        <option value="ocs">OCS</option>
-        <option value="kaigen">海源通関</option>
-        <option value="tw">TW物流</option>
-        <option value="manual">手動入力</option>
+      <label>業者</label>
+      <select id="carrier">
+        <option value="200">OCS (200)</option>
+        <option value="160">海源通関 (160)</option>
+        <option value="180">TW物流 (180)</option>
+        <option value="0">手動入力</option>
       </select>
     </div>
     <div class="field">
@@ -307,21 +286,20 @@
   </div>
 </div>
 
-<!-- Amazon情報 -->
 <div class="card">
   <div class="card-title">Amazon・販売情報</div>
   <div class="field-grid">
     <div class="field">
       <label>販売価格</label>
       <input type="number" id="sellingPrice" placeholder="0" min="0" step="1">
-      <span class="unit">円（JPY）</span>
+      <span class="unit">円</span>
     </div>
     <div class="field">
       <label>Amazon手数料</label>
       <input type="number" id="amazonFee" placeholder="0" min="0" step="1">
       <span class="unit">円</span>
     </div>
-    <div class="field field-grid-span">
+    <div class="field">
       <label>FBA出荷手数料</label>
       <input type="number" id="fbaFee" placeholder="0" min="0" step="1">
       <span class="unit">円</span>
@@ -329,182 +307,161 @@
   </div>
 </div>
 
-<button class="calc-btn" onclick="calculate()">計算する</button>
+<button class="calc-btn" id="calcBtn">計算する</button>
 
-<!-- 結果 -->
 <div class="card" id="result">
   <div id="verdict" class="verdict"></div>
-
   <ul class="breakdown">
     <li>
-      <span class="label">商品代金（円換算）</span>
-      <span class="val" id="r-productJpy">—</span>
+      <span class="lbl">商品代金（円換算）</span>
+      <span class="val" id="r-product">-</span>
     </li>
     <li>
-      <span class="label">国際送料</span>
-      <span class="val minus" id="r-shipping">—</span>
+      <span class="lbl">国際送料</span>
+      <span class="val minus" id="r-shipping">-</span>
     </li>
     <li>
-      <span class="label">代行手数料</span>
-      <span class="val minus" id="r-agency">—</span>
+      <span class="lbl">代行手数料</span>
+      <span class="val minus" id="r-agency">-</span>
     </li>
     <li>
-      <span class="label">関税</span>
-      <span class="val minus" id="r-duty">—</span>
+      <span class="lbl">関税</span>
+      <span class="val minus" id="r-duty">-</span>
     </li>
     <li>
-      <span class="label">消費税（輸入時）</span>
-      <span class="val minus" id="r-tax">—</span>
+      <span class="lbl">消費税（輸入時）</span>
+      <span class="val minus" id="r-tax">-</span>
     </li>
-    <li class="total cost-total">
-      <span class="label">仕入れ原価</span>
-      <span class="val" id="r-cost">—</span>
-    </li>
-    <li>
-      <span class="label">Amazon手数料</span>
-      <span class="val minus" id="r-amazon">—</span>
+    <li class="total-row cost-row">
+      <span class="lbl">仕入れ原価</span>
+      <span class="val" id="r-cost">-</span>
     </li>
     <li>
-      <span class="label">FBA出荷手数料</span>
-      <span class="val minus" id="r-fba">—</span>
+      <span class="lbl">Amazon手数料</span>
+      <span class="val minus" id="r-amazon">-</span>
     </li>
-    <li class="total profit-row" id="r-profit-row">
-      <span class="label">粗利</span>
-      <span class="val" id="r-profit">—</span>
+    <li>
+      <span class="lbl">FBA出荷手数料</span>
+      <span class="val minus" id="r-fba">-</span>
+    </li>
+    <li class="total-row profit-row" id="r-profit-row">
+      <span class="lbl">粗利</span>
+      <span class="val" id="r-profit">-</span>
     </li>
   </ul>
 
-  <div class="margin-bar-wrap">
-    <div class="margin-bar-label">
+  <div class="bar-wrap">
+    <div class="bar-label">
       <span>粗利率</span>
-      <span id="r-margin-pct">—</span>
+      <span id="r-pct">-</span>
     </div>
-    <div class="margin-bar">
-      <div class="margin-bar-fill" id="margin-fill" style="width:0%"></div>
+    <div class="bar-bg">
+      <div class="bar-fill" id="bar-fill"></div>
     </div>
-    <div class="threshold-line"></div>
+    <div class="bar-marker"></div>
   </div>
 </div>
 
-<button class="reset-btn" id="reset-btn" onclick="resetForm()" style="display:none">リセット</button>
+<button class="reset-btn" id="resetBtn" style="display:none">リセット</button>
 
 <script>
-  const CARRIER_RATES = {
-    ocs:    200,
-    kaigen: 160,
-    tw:     180,
-    manual: null,
-  };
+(function() {
+  var carrierSelect = document.getElementById('carrier');
+  var shippingRateInput = document.getElementById('shippingRate');
 
-  function onCarrierChange() {
-    const carrier = document.getElementById('carrier').value;
-    const rateInput = document.getElementById('shippingRate');
-    const rate = CARRIER_RATES[carrier];
-    if (rate !== null) {
-      rateInput.value = rate;
-      rateInput.readOnly = false;
+  carrierSelect.addEventListener('change', function() {
+    var val = carrierSelect.value;
+    if (val !== '0') {
+      shippingRateInput.value = val;
     } else {
-      rateInput.value = '';
-      rateInput.readOnly = false;
-      rateInput.focus();
+      shippingRateInput.value = '';
+      shippingRateInput.focus();
     }
+  });
+
+  function getVal(id) {
+    return parseFloat(document.getElementById(id).value) || 0;
   }
 
   function fmt(n) {
-    return '¥' + Math.round(n).toLocaleString('ja-JP');
+    var rounded = Math.round(n);
+    return '¥' + rounded.toLocaleString();
+  }
+
+  function setText(id, text) {
+    document.getElementById(id).textContent = text;
   }
 
   function calculate() {
-    const productCny  = parseFloat(document.getElementById('productPrice').value) || 0;
-    const weightG     = parseFloat(document.getElementById('weight').value)        || 0;
-    const rate        = parseFloat(document.getElementById('exchangeRate').value)  || 21;
-    const agencyRate  = parseFloat(document.getElementById('agencyRate').value)    || 5;
-    const dutyRate    = parseFloat(document.getElementById('dutyRate').value)      || 8;
-    const shippingPer = parseFloat(document.getElementById('shippingRate').value)  || 0;
-    const sellingJpy  = parseFloat(document.getElementById('sellingPrice').value)  || 0;
-    const amazonFee   = parseFloat(document.getElementById('amazonFee').value)     || 0;
-    const fbaFee      = parseFloat(document.getElementById('fbaFee').value)        || 0;
+    var productCny  = getVal('productPrice');
+    var weightG     = getVal('weight');
+    var rate        = getVal('exchangeRate') || 21;
+    var agencyRate  = getVal('agencyRate');
+    var dutyRate    = getVal('dutyRate');
+    var shippingPer = getVal('shippingRate');
+    var sellingJpy  = getVal('sellingPrice');
+    var amazonFee   = getVal('amazonFee');
+    var fbaFee      = getVal('fbaFee');
 
-    // 商品代金（円換算）
-    const productJpy = productCny * rate;
+    var productJpy = productCny * rate;
+    var shipping   = (weightG / 1000) * shippingPer * rate;
+    var agency     = productJpy * (agencyRate / 100);
+    var duty       = productJpy * (dutyRate / 100);
+    var tax        = (productJpy + duty) * 0.1;
+    var cost       = productJpy + shipping + agency + duty + tax;
+    var profit     = sellingJpy - cost - amazonFee - fbaFee;
+    var margin     = sellingJpy > 0 ? (profit / sellingJpy) * 100 : 0;
+    var isOk       = margin >= 30;
 
-    // 国際送料（円）= 重量(g) ÷ 1000 × 単価(元/kg) × レート
-    const shipping = (weightG / 1000) * shippingPer * rate;
+    setText('r-product',  fmt(productJpy));
+    setText('r-shipping', '-' + fmt(shipping));
+    setText('r-agency',   '-' + fmt(agency));
+    setText('r-duty',     '-' + fmt(duty));
+    setText('r-tax',      '-' + fmt(tax));
+    setText('r-cost',     fmt(cost));
+    setText('r-amazon',   '-' + fmt(amazonFee));
+    setText('r-fba',      '-' + fmt(fbaFee));
+    setText('r-profit',   fmt(profit));
 
-    // 代行手数料（円）= 商品代金(円換算) × 代行手数料率
-    const agency = productJpy * (agencyRate / 100);
+    var marginText = margin.toFixed(1) + '%';
+    setText('r-pct', marginText);
 
-    // 関税（円）= 商品代金(円換算) × 関税率
-    const duty = productJpy * (dutyRate / 100);
+    var fill = document.getElementById('bar-fill');
+    var clamp = margin < 0 ? 0 : margin > 100 ? 100 : margin;
+    fill.style.width = clamp + '%';
+    fill.className = 'bar-fill ' + (isOk ? 'ok' : 'ng');
 
-    // 消費税（円）= (商品代金(円換算) + 関税) × 10%
-    const tax = (productJpy + duty) * 0.1;
+    var profitRow = document.getElementById('r-profit-row');
+    profitRow.className = 'total-row ' + (profit < 0 ? 'profit-neg' : 'profit-row');
 
-    // 仕入れ原価
-    const cost = productJpy + shipping + agency + duty + tax;
-
-    // 粗利
-    const profit = sellingJpy - cost - amazonFee - fbaFee;
-
-    // 粗利率
-    const margin = sellingJpy > 0 ? (profit / sellingJpy) * 100 : 0;
-    const isOk   = margin >= 30;
-
-    // 表示
-    document.getElementById('r-productJpy').textContent = fmt(productJpy);
-    document.getElementById('r-shipping').textContent   = '−' + fmt(shipping);
-    document.getElementById('r-agency').textContent     = '−' + fmt(agency);
-    document.getElementById('r-duty').textContent       = '−' + fmt(duty);
-    document.getElementById('r-tax').textContent        = '−' + fmt(tax);
-    document.getElementById('r-cost').textContent       = fmt(cost);
-    document.getElementById('r-amazon').textContent     = '−' + fmt(amazonFee);
-    document.getElementById('r-fba').textContent        = '−' + fmt(fbaFee);
-    document.getElementById('r-profit').textContent     = fmt(profit);
-
-    const marginText = margin.toFixed(1) + '%';
-    document.getElementById('r-margin-pct').textContent = marginText;
-
-    // バー
-    const fill = document.getElementById('margin-fill');
-    const clampedPct = Math.min(Math.max(margin, 0), 100);
-    fill.style.width = clampedPct + '%';
-    fill.className   = 'margin-bar-fill ' + (isOk ? 'ok' : 'ng');
-
-    // 粗利行の色
-    const profitRow = document.getElementById('r-profit-row');
-    profitRow.className = 'total profit-row' + (profit < 0 ? ' loss' : '');
-
-    // 判定
-    const verdict = document.getElementById('verdict');
+    var verdict = document.getElementById('verdict');
     verdict.textContent = isOk
-      ? `✅ 仕入れOK（粗利率 ${marginText}）`
-      : `❌ 見送り（粗利率 ${marginText}）`;
+      ? ('仕入れOK  (' + marginText + ')')
+      : ('見送り  (' + marginText + ')');
     verdict.className = 'verdict ' + (isOk ? 'ok' : 'ng');
 
-    document.getElementById('result').style.display   = 'block';
-    document.getElementById('reset-btn').style.display = 'block';
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('resetBtn').style.display = 'block';
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function resetForm() {
-    ['productPrice','weight','sellingPrice','amazonFee','fbaFee'].forEach(id => {
+  function reset() {
+    ['productPrice','weight','sellingPrice','amazonFee','fbaFee'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
     document.getElementById('exchangeRate').value = '21';
     document.getElementById('agencyRate').value   = '5';
     document.getElementById('dutyRate').value     = '8';
-    document.getElementById('carrier').value      = 'ocs';
+    document.getElementById('carrier').value      = '200';
     document.getElementById('shippingRate').value = '200';
-
-    document.getElementById('result').style.display    = 'none';
-    document.getElementById('reset-btn').style.display = 'none';
+    document.getElementById('result').style.display   = 'none';
+    document.getElementById('resetBtn').style.display = 'none';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Enterキーで計算
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') calculate();
-  });
+  document.getElementById('calcBtn').addEventListener('click', calculate);
+  document.getElementById('resetBtn').addEventListener('click', reset);
+}());
 </script>
 </body>
 </html>
