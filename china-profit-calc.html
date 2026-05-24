@@ -151,6 +151,36 @@
     .breakdown li .val { font-weight: 600; white-space: nowrap; }
     .breakdown li .val.minus { color: var(--ng); }
 
+    /* 商品代金 expandable */
+    .li-product { flex-wrap: wrap; cursor: pointer; user-select: none; }
+    .li-product .lbl-wrap { display: flex; align-items: center; gap: 4px; }
+    .chevron {
+      font-size: .65rem; color: var(--muted);
+      transition: transform .2s;
+      display: inline-block;
+    }
+    .li-product.open .chevron { transform: rotate(180deg); }
+    .product-detail {
+      display: none;
+      width: 100%;
+      background: var(--primary-light);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 6px;
+      font-size: .78rem;
+      color: var(--label);
+      line-height: 1.8;
+    }
+    .li-product.open .product-detail { display: block; }
+    .product-detail .d-row { display: flex; justify-content: space-between; }
+    .product-detail .d-row.d-total {
+      font-weight: 700;
+      color: var(--value);
+      border-top: 1px solid #c7d9f5;
+      margin-top: 4px;
+      padding-top: 4px;
+    }
+
     .breakdown li.total-row {
       font-size: 1rem;
       font-weight: 700;
@@ -312,9 +342,17 @@
 <div class="card" id="result">
   <div id="verdict" class="verdict"></div>
   <ul class="breakdown">
-    <li>
-      <span class="lbl">商品代金（円換算）</span>
+    <li class="li-product" id="li-product">
+      <span class="lbl-wrap">
+        <span class="lbl">商品代金（円換算）</span>
+        <span class="chevron">▼</span>
+      </span>
       <span class="val" id="r-product">-</span>
+      <div class="product-detail" id="product-detail">
+        <div class="d-row"><span>商品代金</span><span id="d-cny">-</span></div>
+        <div class="d-row"><span>× 為替レート</span><span id="d-rate">-</span></div>
+        <div class="d-row d-total"><span>= 円換算</span><span id="d-jpy">-</span></div>
+      </div>
     </li>
     <li>
       <span class="lbl">国際送料</span>
@@ -414,6 +452,9 @@
     var isOk       = margin >= 30;
 
     setText('r-product',  fmt(productJpy));
+    setText('d-cny',  productCny.toLocaleString() + ' 元');
+    setText('d-rate', rate + ' 円/元');
+    setText('d-jpy',  fmt(productJpy));
     setText('r-shipping', '-' + fmt(shipping));
     setText('r-agency',   '-' + fmt(agency));
     setText('r-duty',     '-' + fmt(duty));
@@ -461,6 +502,10 @@
 
   document.getElementById('calcBtn').addEventListener('click', calculate);
   document.getElementById('resetBtn').addEventListener('click', reset);
+
+  document.getElementById('li-product').addEventListener('click', function() {
+    this.classList.toggle('open');
+  });
 }());
 </script>
 </body>
