@@ -570,6 +570,236 @@
       pointer-events: none;
     }
     .toast.show { opacity: 1; }
+
+    /* ══════════════════════════════════════
+       PRICE TRACKER TAB
+    ══════════════════════════════════════ */
+    #tab-price { overflow: hidden; }
+    #tab-price.active { display: flex; flex-direction: column; }
+
+    .price-body {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+    @media (max-width: 860px) { .price-body { grid-template-columns: 1fr; } }
+
+    .price-sidebar {
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .price-sidebar-hd {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #757575;
+      padding: 4px 2px 8px;
+      border-bottom: 1px solid #e0e0e0;
+      letter-spacing: 0.03em;
+    }
+    .price-card {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .price-card:hover { border-color: #90CAF9; background: #f0f7ff; }
+    .price-card.sel { border-color: #1565C0; background: #e3f2fd; box-shadow: inset 2px 0 0 #1565C0; }
+    .price-card-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #212121;
+      margin-bottom: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .price-card-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .platform-badge {
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .platform-badge.amazon  { background: #FF9900; color: #fff; }
+    .platform-badge.rakuten { background: #BF0000; color: #fff; }
+    .platform-badge.yahoo   { background: #FF0033; color: #fff; }
+    .platform-badge.other   { background: #616161; color: #fff; }
+    .price-card-current { font-size: 1.0rem; font-weight: 700; color: #1565C0; }
+    .price-card-current.alerted { color: #C62828; }
+    .price-card-chg { font-size: 0.68rem; }
+    .chg-up   { color: #C62828; }
+    .chg-down { color: #2E7D32; }
+    .chg-flat { color: #9e9e9e; }
+    .price-card-sub { font-size: 0.66rem; color: #9e9e9e; }
+    .price-empty-side { text-align: center; color: #bdbdbd; font-size: 0.78rem; padding: 20px 0; }
+
+    .price-main {
+      overflow-y: auto;
+      padding: 18px 20px;
+      background: #eef0f3;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .price-empty-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 10px;
+      color: #9e9e9e;
+      padding: 60px 0;
+    }
+    .price-empty-main .emoji { font-size: 2.8rem; }
+    .price-empty-main p { font-size: 0.86rem; }
+
+    .pd-hd {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .pd-hd-left { flex: 1; min-width: 0; }
+    .pd-hd-left h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #212121;
+      margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pd-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.7rem; color: #757575; }
+    .alert-badge { background: #FFEBEE; color: #C62828; font-weight: 700; padding: 1px 8px; border-radius: 3px; font-size: 0.68rem; }
+
+    .price-stats-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 1060px) { .price-stats-row { grid-template-columns: repeat(3, 1fr); } }
+    .psc {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+    .psc .lbl { font-size: 0.66rem; font-weight: 700; color: #757575; margin-bottom: 4px; }
+    .psc .val { font-size: 1.0rem; font-weight: 700; color: #1565C0; }
+    .psc .val.danger  { color: #C62828; }
+    .psc .val.success { color: #2E7D32; }
+    .psc .val.warn    { color: #E65100; }
+
+    .price-chart-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 14px 18px;
+    }
+    .price-chart-card .chart-hd {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .price-chart-card .chart-hd span { font-size: 0.8rem; font-weight: 700; color: #424242; }
+    .price-chart-wrap { position: relative; height: 230px; }
+
+    .price-add-card, .price-hist-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 14px 18px;
+    }
+    .price-add-card h3, .price-hist-card h3 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #424242;
+      margin-bottom: 10px;
+    }
+    .price-add-row {
+      display: grid;
+      grid-template-columns: 150px 130px 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+    @media (max-width: 760px) { .price-add-row { grid-template-columns: 1fr 1fr; } }
+    .price-add-row .fl { font-size: 0.68rem; font-weight: 700; color: #616161; margin-bottom: 3px; }
+    .price-add-row input {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #bdbdbd;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.84rem;
+    }
+    .price-add-row input:focus { outline: none; border-color: #1565C0; box-shadow: 0 0 0 2px rgba(21,101,192,0.1); }
+    .btn-record {
+      padding: 7px 16px;
+      background: #1565C0;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-record:hover { background: #0D47A1; }
+
+    .price-hist-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .price-hist-table th {
+      background: #1565C0;
+      color: #fff;
+      padding: 6px 10px;
+      text-align: left;
+      font-size: 0.7rem;
+    }
+    .price-hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
+    .price-hist-table tbody tr:nth-child(even) td { background: #f8f9fa; }
+    .price-hist-table tbody tr:hover td { background: #e3f2fd; }
+    .chg-up   { color: #C62828; }
+    .chg-down { color: #2E7D32; }
+    .chg-flat { color: #9e9e9e; }
+    .btn-del-entry {
+      background: none;
+      border: none;
+      color: #bdbdbd;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 6px;
+      line-height: 1;
+      border-radius: 3px;
+    }
+    .btn-del-entry:hover { color: #C62828; background: #FFEBEE; }
+
+    /* modal fields reuse */
+    .pm-field { margin-bottom: 12px; }
+    .pm-field label { display: block; font-size: 0.72rem; font-weight: 700; color: #616161; margin-bottom: 4px; }
+    .pm-field input, .pm-field select {
+      width: 100%;
+      padding: 8px 11px;
+      border: 1px solid #bdbdbd;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.86rem;
+      color: #212121;
+      background: #fff;
+    }
+    .pm-field input:focus, .pm-field select:focus { outline: none; border-color: #1565C0; box-shadow: 0 0 0 2px rgba(21,101,192,0.1); }
+    .pm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   </style>
 </head>
 <body>
@@ -581,9 +811,11 @@
     <button class="tab-btn active" id="tabBtn-sim" onclick="switchTab('sim')">損益分岐点</button>
     <button class="tab-btn" id="tabBtn-tracker" onclick="switchTab('tracker')">リリース後</button>
     <button class="tab-btn" id="tabBtn-data" onclick="switchTab('data')">データ確認</button>
+    <button class="tab-btn" id="tabBtn-price" onclick="switchTab('price')">価格追跡</button>
   </div>
   <div class="hdr-right">
     <button class="btn-ghost-hdr" id="hdr-tracker-add" style="display:none" onclick="openModal()">+ 商品を追加</button>
+    <button class="btn-ghost-hdr" id="hdr-price-add" style="display:none" onclick="openPriceModal()">+ 商品を追加</button>
   </div>
 </header>
 
@@ -951,6 +1183,69 @@
   </div>
 </div>
 
+<!-- ══════════════════════ TAB 4: PRICE TRACKER ══════════════════════ -->
+<div class="tab-content" id="tab-price">
+  <div class="price-body">
+    <!-- SIDEBAR -->
+    <div class="price-sidebar">
+      <div class="price-sidebar-hd">追跡中の商品</div>
+      <div id="priceProductList"></div>
+    </div>
+    <!-- MAIN -->
+    <div class="price-main" id="priceMain">
+      <div class="price-empty-main" id="priceEmptyMsg">
+        <div class="emoji">📈</div>
+        <p>「＋ 商品を追加」から価格追跡を開始してください</p>
+      </div>
+      <div id="priceDetail" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PRICE TRACKER: 商品モーダル ══════════════════════ -->
+<div class="modal-overlay" id="priceProductModal" style="display:none" onclick="if(event.target===this)closePriceModal()">
+  <div class="modal-box" style="width:min(480px,96vw)">
+    <div class="modal-hd">
+      <span id="priceModalTitle">商品を追加</span>
+      <button class="modal-close" onclick="closePriceModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="pm-field">
+        <label>商品名 <span style="color:#C62828">*</span></label>
+        <input type="text" id="pmName" placeholder="例：ワイヤレスイヤホン XYZ">
+      </div>
+      <div class="pm-row">
+        <div class="pm-field" style="margin-bottom:0">
+          <label>プラットフォーム</label>
+          <select id="pmPlatform">
+            <option value="amazon">Amazon</option>
+            <option value="rakuten">楽天</option>
+            <option value="yahoo">Yahoo!ショッピング</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div class="pm-field" style="margin-bottom:0">
+          <label>アラート価格（円・任意）</label>
+          <input type="number" id="pmAlertPrice" placeholder="例：1500（以下でアラート）" min="0">
+        </div>
+      </div>
+      <div style="margin-bottom:12px"></div>
+      <div class="pm-field">
+        <label>商品URL（任意）</label>
+        <input type="text" id="pmUrl" placeholder="https://...">
+      </div>
+      <div class="pm-field" style="margin-bottom:0">
+        <label>ASIN / 商品ID（任意）</label>
+        <input type="text" id="pmAsin" placeholder="例：B0XXXXXXXXX">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-trk btn-trk-white" onclick="closePriceModal()">キャンセル</button>
+      <button class="btn-trk btn-trk-primary" onclick="savePriceProduct()">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════ API設定 MODAL ══════════════════════ -->
 <div class="modal-overlay" id="apiModal" style="display:none" onclick="if(event.target===this)closeApiSettings()">
   <div class="modal-box" style="width:min(480px,96vw)">
@@ -1031,8 +1326,10 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('tabBtn-' + tab).classList.add('active');
   document.getElementById('hdr-tracker-add').style.display = tab === 'tracker' ? '' : 'none';
+  document.getElementById('hdr-price-add').style.display = tab === 'price' ? '' : 'none';
   if (tab === 'tracker') render();
   if (tab === 'data') renderDataCheck();
+  if (tab === 'price') renderPriceTab();
 }
 
 function renderDataCheck() {
@@ -2015,6 +2312,413 @@ async function fetchRakutenSales(productId) {
 }
 
 /* ══════════════════════════════════════
+   PRICE TRACKER — STATE
+══════════════════════════════════════ */
+const PRICE_KEY = 'price_tracker_v1';
+let priceState = { products: [] };
+let selPriceId = null;
+let priceChart = null;
+let editingPriceId = null;
+
+function loadPriceState() {
+  try {
+    const raw = localStorage.getItem(PRICE_KEY);
+    if (raw) priceState = JSON.parse(raw);
+  } catch(e) {}
+}
+function savePriceState() { localStorage.setItem(PRICE_KEY, JSON.stringify(priceState)); }
+
+function platformLabel(p) {
+  return { amazon: 'Amazon', rakuten: '楽天', yahoo: 'Yahoo!', other: 'その他' }[p] || p;
+}
+
+/* ══════════════════════════════════════
+   PRICE TRACKER — PRODUCT MODAL
+══════════════════════════════════════ */
+function openPriceModal(editId) {
+  editingPriceId = editId || null;
+  if (editId) {
+    const p = priceState.products.find(x => x.id === editId);
+    if (!p) return;
+    document.getElementById('priceModalTitle').textContent = '商品を編集';
+    document.getElementById('pmName').value = p.name;
+    document.getElementById('pmPlatform').value = p.platform;
+    document.getElementById('pmAlertPrice').value = p.alertPrice != null ? p.alertPrice : '';
+    document.getElementById('pmUrl').value = p.url || '';
+    document.getElementById('pmAsin').value = p.asin || '';
+  } else {
+    document.getElementById('priceModalTitle').textContent = '商品を追加';
+    document.getElementById('pmName').value = '';
+    document.getElementById('pmPlatform').value = 'amazon';
+    document.getElementById('pmAlertPrice').value = '';
+    document.getElementById('pmUrl').value = '';
+    document.getElementById('pmAsin').value = '';
+  }
+  document.getElementById('priceProductModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('pmName').focus(), 80);
+}
+
+function closePriceModal() {
+  document.getElementById('priceProductModal').style.display = 'none';
+  editingPriceId = null;
+}
+
+function savePriceProduct() {
+  const name = document.getElementById('pmName').value.trim();
+  if (!name) { showToast('商品名を入力してください'); return; }
+  const alertVal = document.getElementById('pmAlertPrice').value;
+  const alertPrice = alertVal !== '' ? parseFloat(alertVal) : null;
+  const url = document.getElementById('pmUrl').value.trim();
+  const asin = document.getElementById('pmAsin').value.trim();
+  const platform = document.getElementById('pmPlatform').value;
+
+  if (editingPriceId) {
+    const p = priceState.products.find(x => x.id === editingPriceId);
+    if (p) Object.assign(p, { name, platform, alertPrice, url, asin });
+  } else {
+    const newP = { id: uid(), name, platform, alertPrice, url, asin, priceHistory: [], createdAt: new Date().toISOString().slice(0,10) };
+    priceState.products.push(newP);
+    selPriceId = newP.id;
+  }
+  savePriceState();
+  closePriceModal();
+  renderPriceTab();
+  showToast(editingPriceId ? '更新しました' : '商品を追加しました');
+}
+
+function deletePriceProduct(id) {
+  if (!confirm('この商品の追跡データをすべて削除します。よろしいですか？')) return;
+  priceState.products = priceState.products.filter(p => p.id !== id);
+  if (selPriceId === id) selPriceId = null;
+  savePriceState();
+  renderPriceTab();
+  showToast('削除しました');
+}
+
+/* ══════════════════════════════════════
+   PRICE TRACKER — SIDEBAR
+══════════════════════════════════════ */
+function renderPriceTab() {
+  renderPriceSidebar();
+  const p = selPriceId ? priceState.products.find(x => x.id === selPriceId) : null;
+  if (p) renderPriceDetail(p);
+  else showPriceEmpty();
+}
+
+function showPriceEmpty() {
+  document.getElementById('priceEmptyMsg').style.display = '';
+  document.getElementById('priceDetail').innerHTML = '';
+  document.getElementById('priceDetail').style.display = 'none';
+  if (priceChart) { priceChart.destroy(); priceChart = null; }
+}
+
+function renderPriceSidebar() {
+  const el = document.getElementById('priceProductList');
+  if (!priceState.products.length) {
+    el.innerHTML = '<div class="price-empty-side">まだ商品がありません</div>';
+    return;
+  }
+  el.innerHTML = priceState.products.map(p => {
+    const hist = [...p.priceHistory].sort((a,b) => a.date < b.date ? -1 : 1);
+    const latest = hist[hist.length - 1];
+    const prev   = hist[hist.length - 2];
+    const curr   = latest ? latest.price : null;
+    const isAlert = p.alertPrice != null && curr !== null && curr <= p.alertPrice;
+
+    let chgHtml = '';
+    if (latest && prev) {
+      const d = latest.price - prev.price, pct = (d/prev.price*100).toFixed(1);
+      if (d > 0)      chgHtml = `<span class="price-card-chg chg-up">▲${fmt(d)}</span>`;
+      else if (d < 0) chgHtml = `<span class="price-card-chg chg-down">▼${fmt(Math.abs(d))}</span>`;
+      else            chgHtml = `<span class="price-card-chg chg-flat">→</span>`;
+    }
+
+    const prices = hist.map(h=>h.price);
+    const minP = prices.length ? Math.min(...prices) : null;
+    const maxP = prices.length ? Math.max(...prices) : null;
+
+    return `<div class="price-card${selPriceId===p.id?' sel':''}" onclick="selectPrice('${p.id}')">
+      <div class="price-card-name">${esc(p.name)}</div>
+      <div class="price-card-row">
+        <span class="platform-badge ${p.platform}">${platformLabel(p.platform)}</span>
+        ${isAlert?'<span style="font-size:0.62rem;color:#C62828;font-weight:700">⚠ アラート</span>':''}
+      </div>
+      <div class="price-card-row" style="align-items:baseline">
+        <span class="price-card-current${isAlert?' alerted':''}">${curr!==null?fmt(curr):'未登録'}</span>
+        ${chgHtml}
+      </div>
+      <div class="price-card-sub">${minP!==null?`最安 ${fmt(minP)} / 最高 ${fmt(maxP)} / ${hist.length}件`:'データなし'}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectPrice(id) { selPriceId = id; renderPriceTab(); }
+
+/* ══════════════════════════════════════
+   PRICE TRACKER — DETAIL
+══════════════════════════════════════ */
+function renderPriceDetail(p) {
+  document.getElementById('priceEmptyMsg').style.display = 'none';
+  const el = document.getElementById('priceDetail');
+  el.style.display = 'contents';
+
+  const hist = [...p.priceHistory].sort((a,b) => a.date < b.date ? -1 : 1);
+  const prices = hist.map(h=>h.price);
+  const curr   = prices.length ? prices[prices.length-1] : null;
+  const prev   = prices.length > 1 ? prices[prices.length-2] : null;
+  const minP   = prices.length ? Math.min(...prices) : null;
+  const maxP   = prices.length ? Math.max(...prices) : null;
+  const avgP   = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : null;
+  const spread = (minP!=null && maxP!=null) ? maxP-minP : null;
+  const isAlert = p.alertPrice!=null && curr!==null && curr<=p.alertPrice;
+
+  let chgStr='—', chgCls='';
+  if (curr!==null && prev!==null) {
+    const d=curr-prev, pct=(d/prev*100).toFixed(1);
+    if (d>0)      { chgStr=`▲ ${fmt(d)} (+${pct}%)`; chgCls='danger'; }
+    else if (d<0) { chgStr=`▼ ${fmt(Math.abs(d))} (${pct}%)`; chgCls='success'; }
+    else          { chgStr='変動なし'; }
+  }
+
+  const today = new Date().toISOString().slice(0,10);
+
+  el.innerHTML = `
+    <div class="pd-hd">
+      <div class="pd-hd-left">
+        <h2>${esc(p.name)}</h2>
+        <div class="pd-meta">
+          <span class="platform-badge ${p.platform}">${platformLabel(p.platform)}</span>
+          ${p.asin ? `<span>ID: ${esc(p.asin)}</span>` : ''}
+          ${p.url  ? `<a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:#1565C0">リンク →</a>` : ''}
+          ${p.alertPrice!=null ? `<span style="color:#E65100">⚑ アラート: ${fmt(p.alertPrice)}以下</span>` : ''}
+          ${isAlert ? '<span class="alert-badge">⚠ アラート発動中</span>' : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;align-items:flex-start">
+        <button onclick="openPriceModal('${p.id}')" style="padding:6px 12px;background:#fff;border:1px solid #bdbdbd;border-radius:4px;font-family:inherit;font-size:0.78rem;cursor:pointer">編集</button>
+        <button onclick="deletePriceProduct('${p.id}')" style="padding:6px 12px;background:#FFEBEE;border:1px solid #FFCDD2;color:#C62828;border-radius:4px;font-family:inherit;font-size:0.78rem;font-weight:700;cursor:pointer">削除</button>
+      </div>
+    </div>
+
+    <div class="price-stats-row">
+      <div class="psc">
+        <div class="lbl">現在値</div>
+        <div class="val${isAlert?' danger':''}">${curr!==null?fmt(curr):'—'}</div>
+      </div>
+      <div class="psc">
+        <div class="lbl">前回比</div>
+        <div class="val ${chgCls}" style="font-size:0.86rem">${chgStr}</div>
+      </div>
+      <div class="psc">
+        <div class="lbl">最安値 🟢</div>
+        <div class="val success">${minP!==null?fmt(minP):'—'}</div>
+      </div>
+      <div class="psc">
+        <div class="lbl">最高値 🔴</div>
+        <div class="val danger">${maxP!==null?fmt(maxP):'—'}</div>
+      </div>
+      <div class="psc">
+        <div class="lbl">平均 / 変動幅</div>
+        <div class="val" style="font-size:0.82rem">${avgP!==null?fmt(Math.round(avgP)):'—'} / ${spread!==null?fmt(spread):'—'}</div>
+      </div>
+    </div>
+
+    <div class="price-chart-card">
+      <div class="chart-hd">
+        <span>価格推移チャート</span>
+        <span style="font-size:0.7rem;color:#9e9e9e">${hist.length}件 &nbsp;●<span style="color:#2E7D32">最安</span> &nbsp;●<span style="color:#C62828">最高</span>${p.alertPrice!=null?' &nbsp;- - アラート':''}</span>
+      </div>
+      <div class="price-chart-wrap">
+        <canvas id="priceChartCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="price-add-card">
+      <h3>価格を記録する</h3>
+      <div class="price-add-row">
+        <div>
+          <div class="fl">日付</div>
+          <input type="date" id="peDate" value="${today}">
+        </div>
+        <div>
+          <div class="fl">価格（円）</div>
+          <input type="number" id="pePrice" placeholder="1500" min="0">
+        </div>
+        <div>
+          <div class="fl">メモ（任意）</div>
+          <input type="text" id="peNote" placeholder="例：セール中">
+        </div>
+        <div>
+          <button class="btn-record" onclick="addPriceEntry('${p.id}')">記録する</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="price-hist-card">
+      <h3>価格履歴 <span style="font-weight:400;color:#9e9e9e">(${hist.length}件)</span></h3>
+      ${hist.length===0
+        ? '<p style="color:#9e9e9e;font-size:0.82rem">まだ価格データがありません。上のフォームから記録してください。</p>'
+        : `<div style="overflow-x:auto"><table class="price-hist-table">
+          <thead><tr>
+            <th>日付</th><th>価格</th><th>前回比</th><th>メモ</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${[...hist].reverse().map((h, i, arr) => {
+              const prevH = arr[i+1];
+              let chg='—', chgCls2='chg-flat';
+              if (prevH) {
+                const d=h.price-prevH.price, pct=(d/prevH.price*100).toFixed(1);
+                if (d>0)      { chg=`▲ ${fmt(d)} (+${pct}%)`; chgCls2='chg-up'; }
+                else if (d<0) { chg=`▼ ${fmt(Math.abs(d))} (${pct}%)`; chgCls2='chg-down'; }
+                else          { chg='変動なし'; }
+              }
+              const isMin = h.price===minP && prices.length>1;
+              const isMax = h.price===maxP && prices.length>1;
+              const badge = isMin?'<span style="font-size:0.62rem;background:#E8F5E9;color:#2E7D32;padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px">最安</span>'
+                           :isMax?'<span style="font-size:0.62rem;background:#FFEBEE;color:#C62828;padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px">最高</span>':'';
+              return `<tr>
+                <td>${h.date}</td>
+                <td style="font-weight:700">${fmt(h.price)}${badge}</td>
+                <td class="${chgCls2}">${chg}</td>
+                <td style="color:#757575;font-size:0.75rem">${esc(h.note||'')}</td>
+                <td><button class="btn-del-entry" onclick="deletePriceEntry('${p.id}','${h.date}')" title="削除">×</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>`
+      }
+    </div>
+  `;
+
+  renderPriceChart(p, hist, minP, maxP);
+}
+
+function renderPriceChart(p, hist, minP, maxP) {
+  if (priceChart) { priceChart.destroy(); priceChart = null; }
+  const canvas = document.getElementById('priceChartCanvas');
+  if (!canvas || hist.length === 0) return;
+
+  const labels = hist.map(h => h.date);
+  const data   = hist.map(h => h.price);
+
+  const ptColors = data.map(v => v === minP && data.length > 1 ? '#2E7D32'
+                                : v === maxP && data.length > 1 ? '#C62828'
+                                : '#E65100');
+
+  const annotations = {};
+  if (p.alertPrice != null) {
+    annotations.alertLine = {
+      type: 'line',
+      yMin: p.alertPrice, yMax: p.alertPrice,
+      borderColor: '#C62828',
+      borderWidth: 2,
+      borderDash: [6, 3],
+      label: {
+        display: true,
+        content: `アラート ${fmt(p.alertPrice)}`,
+        position: 'start',
+        backgroundColor: '#C62828',
+        color: '#fff',
+        font: { size: 10, weight: '700' },
+        padding: { x: 6, y: 2 }
+      }
+    };
+  }
+
+  priceChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '価格',
+        data,
+        borderColor: '#E65100',
+        backgroundColor: 'rgba(230,81,0,0.07)',
+        borderWidth: 2.5,
+        pointRadius: data.length < 60 ? 5 : 2,
+        pointBackgroundColor: ptColors,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        fill: true,
+        tension: 0.25
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `価格: ¥${ctx.raw.toLocaleString('ja-JP')}`,
+            afterLabel: ctx => {
+              const h = hist[ctx.dataIndex];
+              const lines = [];
+              if (h.note) lines.push(`メモ: ${h.note}`);
+              if (p.alertPrice != null && h.price <= p.alertPrice) lines.push('⚠ アラート価格以下');
+              if (h.price === minP && hist.length > 1) lines.push('🟢 最安値');
+              if (h.price === maxP && hist.length > 1) lines.push('🔴 最高値');
+              return lines;
+            }
+          }
+        },
+        annotation: { annotations }
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 12 },
+          grid: { color: '#f0f0f0' }
+        },
+        y: {
+          ticks: { callback: v => '¥' + v.toLocaleString('ja-JP'), font: { size: 10 } },
+          grid: { color: '#f0f0f0' }
+        }
+      }
+    }
+  });
+}
+
+/* ══════════════════════════════════════
+   PRICE TRACKER — ENTRY
+══════════════════════════════════════ */
+function addPriceEntry(productId) {
+  const date  = document.getElementById('peDate').value;
+  const price = parseFloat(document.getElementById('pePrice').value);
+  const note  = document.getElementById('peNote').value.trim();
+
+  if (!date) { showToast('日付を入力してください'); return; }
+  if (isNaN(price) || price < 0) { showToast('有効な価格を入力してください'); return; }
+
+  const p = priceState.products.find(x => x.id === productId);
+  if (!p) return;
+
+  const existing = p.priceHistory.find(h => h.date === date);
+  if (existing) {
+    if (!confirm(`${date} のデータが既にあります（¥${existing.price.toLocaleString()}）。上書きしますか？`)) return;
+    existing.price = price;
+    existing.note  = note;
+  } else {
+    p.priceHistory.push({ date, price, note });
+  }
+
+  document.getElementById('pePrice').value = '';
+  document.getElementById('peNote').value  = '';
+  savePriceState();
+  renderPriceTab();
+  showToast('価格を記録しました');
+}
+
+function deletePriceEntry(productId, date) {
+  const p = priceState.products.find(x => x.id === productId);
+  if (!p) return;
+  if (!confirm(`${date} の価格データを削除しますか？`)) return;
+  p.priceHistory = p.priceHistory.filter(h => h.date !== date);
+  savePriceState();
+  renderPriceTab();
+  showToast('削除しました');
+}
+
+/* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
@@ -2027,6 +2731,8 @@ window.addEventListener('DOMContentLoaded', () => {
   updateAccountSelectors();
   document.getElementById('periodType').value = state.periodType;
   onPeriodTypeChange();
+  // Price tracker init
+  loadPriceState();
   render();
 });
 </script>
