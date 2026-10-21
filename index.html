@@ -688,15 +688,8 @@
       </div>
 
       <div class="card">
-        <h2>月ごとの販売見込み</h2>
-        <p class="section-note">何ヶ月目に何個売れそうかを入れてください。回収期間と、追加発注の量（直前1ヶ月の売れ行きから計算）に使います。最後に入れた月より先は、その月と同じペースで売れる前提です。</p>
-        <div class="cost-list" id="salesList"></div>
-        <button class="btn-add" onclick="addSalesMonth()">+ 月を追加</button>
-      </div>
-
-      <div class="card">
         <h2>仕入れロット設定（任意）</h2>
-        <p class="section-note">追加発注を何回か繰り返したときの、手元のお金の動きを表示します</p>
+        <p class="section-note">追加発注を何回か繰り返したときの、手元のお金の動きを表示します。追加発注の量は「発注する直前1ヶ月に売れた数」をもとに計算します。</p>
         <div class="field-row">
           <div class="field" style="margin-bottom:0">
             <label>第1ロット仕入れ数</label>
@@ -705,9 +698,9 @@
           <div class="field" style="margin-bottom:0">
             <label>追加発注の量</label>
             <select id="lotCover" onchange="update()">
-              <option value="1" selected>直前1ヶ月の売れ行き × 1ヶ月分</option>
-              <option value="1.5">直前1ヶ月の売れ行き × 1.5ヶ月分</option>
-              <option value="2">直前1ヶ月の売れ行き × 2ヶ月分</option>
+              <option value="1" selected>売れ行きの1ヶ月分</option>
+              <option value="1.5">売れ行きの1.5ヶ月分</option>
+              <option value="2">売れ行きの2ヶ月分</option>
             </select>
           </div>
         </div>
@@ -726,10 +719,10 @@
           <div class="field" style="margin-bottom:0">
             <label>追加発注タイミング</label>
             <select id="lotTrigger" onchange="update()">
-              <option value="0.333">前のロットが1/3売れたら</option>
-              <option value="0.5">前のロットが1/2売れたら</option>
-              <option value="0.25">前のロットが1/4売れたら</option>
-              <option value="1.0">前のロットが全部売れたら</option>
+              <option value="0.333">前ロット1/3売れたら</option>
+              <option value="0.5">前ロット1/2売れたら</option>
+              <option value="0.25">前ロット1/4売れたら</option>
+              <option value="1.0">前ロット全部売れたら</option>
             </select>
           </div>
         </div>
@@ -737,6 +730,13 @@
           <span class="t-label">総仕入れ数</span>
           <span class="t-value" id="lotTotalDisplay">—</span>
         </div>
+      </div>
+
+      <div class="card">
+        <h2>月ごとの販売見込み</h2>
+        <p class="section-note">何ヶ月目に何個売れそうかを入れてください。回収期間と、追加発注の量（直前1ヶ月の売れ行きから計算）に使います。最後に入れた月より先は、その月と同じペースで売れる前提です。</p>
+        <div class="cost-list" id="salesList"></div>
+        <button class="btn-add" onclick="addSalesMonth()">+ 月を追加</button>
       </div>
     </div>
 
