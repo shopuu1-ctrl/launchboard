@@ -292,6 +292,11 @@
     .breakdown-table td { padding: 6px 10px; border-bottom: 1px solid #eeeeee; color: #424242; }
     .breakdown-table td:last-child { text-align: right; font-weight: 700; }
     .breakdown-table tr:nth-child(even) td { background: #f5f9ff; }
+    .order-table th, .order-table td { text-align: right; white-space: nowrap; }
+    .order-table th:first-child, .order-table td:first-child { text-align: left; }
+    .order-table td:last-child { font-weight: 400; }
+    .order-table .minus { color: var(--c-danger); font-weight: 700; }
+    .order-table .plus  { color: var(--c-success); font-weight: 700; }
     .breakdown-table .total-row td { background: #e3f2fd !important; font-weight: 700; color: #212121; border-top: 2px solid #BBDEFB; }
     .section-note { font-size: 0.72rem; color: #9e9e9e; margin-bottom: 10px; line-height: 1.5; }
 
@@ -703,25 +708,38 @@
 
       <div class="card">
         <h2>仕入れロット設定（任意）</h2>
-        <p class="section-note">ロット別の損益分岐グラフを追加表示します</p>
+        <p class="section-note">追加発注を何回か繰り返したときの、手元のお金の動きを表示します</p>
         <div class="field-row">
           <div class="field" style="margin-bottom:0">
             <label>第1ロット仕入れ数</label>
             <input type="number" id="lot1" placeholder="10" min="1" oninput="update()">
           </div>
           <div class="field" style="margin-bottom:0">
-            <label>追加発注タイミング</label>
-            <select id="lotTrigger" onchange="update()">
-              <option value="0.333">1/3 売れたら</option>
-              <option value="0.5">1/2 売れたら</option>
-              <option value="0.25">1/4 売れたら</option>
-              <option value="1.0">全部売れたら</option>
-            </select>
+            <label>追加発注1回あたりの数</label>
+            <input type="number" id="lot2" placeholder="30" min="1" oninput="update()">
           </div>
         </div>
-        <div class="field" style="margin-top:10px;">
-          <label>第2ロット仕入れ数</label>
-          <input type="number" id="lot2" placeholder="30" min="1" oninput="update()">
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="margin-bottom:0">
+            <label>追加発注の回数</label>
+            <select id="lotRepeat" onchange="update()">
+              <option value="1">1回（第2ロットまで）</option>
+              <option value="2">2回（第3ロットまで）</option>
+              <option value="3" selected>3回（第4ロットまで）</option>
+              <option value="4">4回（第5ロットまで）</option>
+              <option value="5">5回（第6ロットまで）</option>
+              <option value="6">6回（第7ロットまで）</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>追加発注タイミング</label>
+            <select id="lotTrigger" onchange="update()">
+              <option value="0.333">前のロットが1/3売れたら</option>
+              <option value="0.5">前のロットが1/2売れたら</option>
+              <option value="0.25">前のロットが1/4売れたら</option>
+              <option value="1.0">前のロットが全部売れたら</option>
+            </select>
+          </div>
         </div>
         <div class="total-bar" id="lotSummaryBar" style="display:none">
           <span class="t-label">総仕入れ数</span>
@@ -782,7 +800,7 @@
         </div>
       </div>
 
-      <div class="chart-card">
+      <div class="chart-card" id="unitsChartCard">
         <h2>累計損益グラフ — 販売個数ベース</h2>
         <p class="chart-desc">横軸：累計販売個数 ／ 縦軸：手元のお金（使ったお金を回収しながら推移）</p>
         <div class="chart-wrap"><canvas id="unitsChart"></canvas></div>
@@ -795,22 +813,28 @@
       </div>
 
       <div id="lotSection" style="display:none">
-        <div class="kpi-grid" style="margin-bottom:14px;">
-          <div class="kpi-card">
-            <div class="kpi-label">第1ロット分だけ取り戻すなら</div>
-            <div class="kpi-value" id="kpi-lot1-be">—</div>
-            <div class="kpi-unit" id="kpi-lot1-be-unit">個で回収</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">追加発注タイミング</div>
-            <div class="kpi-value" id="kpi-trigger">—</div>
-            <div class="kpi-unit">個目売れた時点で発注</div>
-          </div>
-        </div>
         <div class="chart-card">
-          <h2>キャッシュフロー推移 — ロット別</h2>
-          <p class="chart-desc">仕入れ代金・初期投資をすべて含んだ現金収支の推移。第2ロット発注時点でいったん下がり、その後回収していきます。</p>
+          <h2>追加発注していくと手元のお金はどうなるか</h2>
+          <p class="chart-desc">売れるたびにお金が戻り、発注するたびにガクッと減ります。線が0より上なら、使ったお金を全部取り戻して手元にプラスがある状態です。</p>
+          <div class="kpi-grid" style="margin:12px 0 14px;">
+            <div class="kpi-card" style="border-left:3px solid var(--c-danger);">
+              <div class="kpi-label">用意しておくお金</div>
+              <div class="kpi-value c-danger" id="kpi-need-cash">—</div>
+              <div class="kpi-unit" id="kpi-need-cash-unit">一番お金が減るとき</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">追加発注1回で増える利益</div>
+              <div class="kpi-value" id="kpi-per-order">—</div>
+              <div class="kpi-unit" id="kpi-per-order-unit">円</div>
+            </div>
+            <div class="kpi-card success-highlight">
+              <div class="kpi-label">全部売り切ったときの利益</div>
+              <div class="kpi-value c-success" id="kpi-final-profit">—</div>
+              <div class="kpi-unit" id="kpi-final-profit-unit">円</div>
+            </div>
+          </div>
           <div class="chart-wrap" style="height:320px;"><canvas id="lotChart"></canvas></div>
+          <table class="breakdown-table order-table" id="orderTable" style="margin-top:16px;"></table>
         </div>
       </div>
     </div>
@@ -1173,9 +1197,7 @@ function update() {
     clearCharts(); resetKPIs(); return;
   }
   // 使ったお金の合計 ＝ 初期費用 ＋ 仕入れ代（第1・第2ロット）
-  const lot1      = parseNum(document.getElementById('lot1').value);
-  const lot2      = lot1 > 0 ? parseNum(document.getElementById('lot2').value) : 0;
-  const stockQty  = lot1 + lot2;
+  const stockQty  = getLotPlan().stockQty;
   const totalOut  = totalCost + stockQty * costPrice;
   const incomePerUnit = sellingPrice - feeAmount - shippingCost;  // 1個売れて戻るお金
 
@@ -1218,7 +1240,8 @@ function update() {
   const timeCard  = document.getElementById('timeChartCard');
 
   if (paceValue >= 1) {
-    paceCard.style.display = ''; timeCard.style.display = '';
+    // 仕入れロットがあるときは下の「追加発注」グラフで見るので、ここのグラフは出さない
+    paceCard.style.display = ''; timeCard.style.display = stockQty > 0 ? 'none' : '';
     const perDay = paceUnit === 'day' ? paceValue : paceUnit === 'week' ? paceValue/7 : paceValue/30;
     const daysToBreakEven = breakEvenUnits / perDay;
     let recoveryText, recoveryUnit;
@@ -1236,13 +1259,14 @@ function update() {
     }
     document.getElementById('kpi-recovery').textContent      = recoveryText;
     document.getElementById('kpi-recovery-unit').textContent = recoveryUnit;
-    renderTimeChart(totalOut, perUnit, perDay, daysToBreakEven, paceUnit, paceValue);
+    if (stockQty === 0) renderTimeChart(totalOut, perUnit, perDay, daysToBreakEven, paceUnit, paceValue);
   } else {
     paceCard.style.display = 'none'; timeCard.style.display = 'none';
   }
 
-  renderUnitsChart(totalOut, perUnit, breakEvenUnits);
-  updateLotAnalysis(totalCost, costPrice, shippingCost, feeRate, sellingPrice);
+  document.getElementById('unitsChartCard').style.display = stockQty > 0 ? 'none' : '';
+  if (stockQty === 0) renderUnitsChart(totalOut, perUnit, breakEvenUnits);
+  updateLotAnalysis(totalCost, costPrice, incomePerUnit);
   updateOutflowSummary(totalCost, costPrice, sellingPrice);
 
   // Show "トラッカーに追加" bar
@@ -1258,6 +1282,7 @@ function resetKPIs() {
   document.getElementById('kpi-recovery-card').style.display = 'none';
   document.getElementById('timeChartCard').style.display = 'none';
   document.getElementById('lotSection').style.display = 'none';
+  document.getElementById('unitsChartCard').style.display = '';
   document.getElementById('outflowCard').style.display = 'none';
 }
 
@@ -1371,18 +1396,17 @@ function renderTimeChart(totalCost, grossProfit, perDay, daysToBreakEven, paceUn
 }
 
 function updateOutflowSummary(fixedCost, unitCost, sellingPrice) {
-  const lot1=parseNum(document.getElementById('lot1').value);
-  const lot2=parseNum(document.getElementById('lot2').value);
+  const {lot1, lot2, repeat, stockQty}=getLotPlan();
   const card=document.getElementById('outflowCard');
-  const lot1Cost=lot1>0?lot1*unitCost:0;
-  const lot2Cost=(lot1>0&&lot2>0)?lot2*unitCost:0;
-  const total=fixedCost+lot1Cost+lot2Cost;
+  const lot1Cost=lot1*unitCost;
+  const addCost=lot2*repeat*unitCost;
+  const total=fixedCost+stockQty*unitCost;
   if(total<=0){card.style.display='none';return;}
   card.style.display='';
   const rows=[];
   costItems.filter(c=>parseNum(c.amount)>0).forEach(c=>{rows.push({label:c.label||'（項目名未入力）',sub:null,amount:parseNum(c.amount)});});
   if(lot1>0&&unitCost>0) rows.push({label:'第1ロット 仕入れ代金',sub:`${lot1}個 × ${fmt(unitCost)}`,amount:lot1Cost});
-  if(lot1>0&&lot2>0&&unitCost>0) rows.push({label:'第2ロット 仕入れ代金',sub:`${lot2}個 × ${fmt(unitCost)}`,amount:lot2Cost});
+  if(lot2>0&&unitCost>0) rows.push({label:`追加発注 仕入れ代金（第2〜第${repeat+1}ロット）`,sub:`${lot2}個 × ${fmt(unitCost)} × ${repeat}回`,amount:addCost});
   document.getElementById('outflowRows').innerHTML=rows.map((r,i)=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;${i>0?'border-top:1px solid #f0f0f0;':''}">
       <div>
@@ -1394,56 +1418,102 @@ function updateOutflowSummary(fixedCost, unitCost, sellingPrice) {
   document.getElementById('outflowTotal').textContent=fmt(total);
 }
 
-function updateLotAnalysis(fixedCost, unitCost, shippingCost, feeRate, sellingPrice) {
+// 仕入れロットの計画（第1ロット＋追加発注×回数）。発注する時点（累計何個売れたとき）も計算する
+function getLotPlan() {
   const lot1=parseNum(document.getElementById('lot1').value);
-  const lot2=parseNum(document.getElementById('lot2').value);
+  const lot2=lot1>0?parseNum(document.getElementById('lot2').value):0;
+  const repeat=lot2>0?parseNum(document.getElementById('lotRepeat').value):0;
   const trigger=parseNum(document.getElementById('lotTrigger').value);
-  const section=document.getElementById('lotSection');
-  const summBar=document.getElementById('lotSummaryBar');
-  if(lot1<1){section.style.display='none';summBar.style.display='none';return;}
-  summBar.style.display='';
-  document.getElementById('lotTotalDisplay').textContent=(lot1+(lot2>0?lot2:0)).toLocaleString('ja-JP')+'個';
-  const incomePerUnit=sellingPrice*(1-feeRate)-shippingCost;
-  const lot1Cost=lot1*unitCost;
-  const totalCost1=fixedCost+lot1Cost;
-  const be1=incomePerUnit>0?Math.ceil(totalCost1/incomePerUnit):Infinity;
-  const triggerUnits=Math.ceil(lot1*trigger);
-  const lot2Cost=lot2>0?lot2*unitCost:0;
-  const totalCost2=fixedCost+lot1Cost+lot2Cost;
-  const be2=incomePerUnit>0?Math.ceil(totalCost2/incomePerUnit):Infinity;
-  section.style.display='';
-  document.getElementById('kpi-lot1-be').textContent=isFinite(be1)?be1.toLocaleString('ja-JP'):'—';
-  document.getElementById('kpi-trigger').textContent=triggerUnits.toLocaleString('ja-JP');
-  if(!isFinite(be1))return;
-  renderLotChart(fixedCost,unitCost,incomePerUnit,lot1,lot1Cost,lot2,lot2Cost,triggerUnits,be1,be2);
+  const lots=[];
+  if(lot1>0) lots.push({no:1,qty:lot1,orderAt:0});
+  let lotStart=0;  // 前のロットを売り始めた時点の累計販売数
+  for(let k=0;k<repeat;k++){
+    const prev=lots[lots.length-1];
+    lots.push({no:lots.length+1,qty:lot2,orderAt:lotStart+Math.ceil(prev.qty*trigger)});
+    lotStart+=prev.qty;
+  }
+  return {lot1,lot2,repeat,lots,stockQty:lots.reduce((s,l)=>s+l.qty,0)};
 }
 
-function renderLotChart(fixedCost,unitCost,incomePerUnit,lot1,lot1Cost,lot2,lot2Cost,triggerUnits,be1,be2) {
+function updateLotAnalysis(fixedCost, unitCost, incomePerUnit) {
+  const {lot2,lots,stockQty}=getLotPlan();
+  const section=document.getElementById('lotSection');
+  const summBar=document.getElementById('lotSummaryBar');
+  if(!lots.length||incomePerUnit<=0){section.style.display='none';summBar.style.display='none';return;}
+  summBar.style.display='';
+  document.getElementById('lotTotalDisplay').textContent=stockQty.toLocaleString('ja-JP')+'個';
+  section.style.display='';
+
+  // 発注ごとに「発注直後」と「そのロットを売り切った時」の手元のお金を計算
+  let paid=fixedCost, sold=0, minCash=0, minAt=null;
+  const rows=lots.map((l,i)=>{
+    paid+=l.qty*unitCost;
+    const afterOrder=l.orderAt*incomePerUnit-paid;
+    if(afterOrder<minCash){minCash=afterOrder;minAt=l;}
+    sold+=l.qty;
+    const nextAt=lots[i+1]?lots[i+1].orderAt:Infinity;
+    // 次の発注より前にこのロットを売り切る場合だけ「売り切った時」の値が意味を持つ
+    const soldOut=Math.min(sold,nextAt)*incomePerUnit-paid;
+    return {...l,cost:l.qty*unitCost,afterOrder,soldOut,soldOutAt:Math.min(sold,nextAt),paid};
+  });
+  const finalProfit=stockQty*incomePerUnit-paid;
+
+  document.getElementById('kpi-need-cash').textContent=fmt(Math.max(0,-minCash));
+  document.getElementById('kpi-need-cash-unit').textContent=minAt?(minAt.no===1?'最初の仕入れ直後':`第${minAt.no}ロット発注の直後`):'持ち出しなし';
+  const perOrder=lot2*(incomePerUnit-unitCost);
+  document.getElementById('kpi-per-order').textContent=lot2>0?fmt(perOrder):'—';
+  document.getElementById('kpi-per-order-unit').textContent=lot2>0?`${lot2}個売り切るごとに`:'追加発注なし';
+  document.getElementById('kpi-final-profit').textContent=fmt(finalProfit);
+  document.getElementById('kpi-final-profit').className='kpi-value '+(finalProfit>=0?'c-success':'c-danger');
+  document.getElementById('kpi-final-profit-unit').textContent=`${stockQty.toLocaleString('ja-JP')}個すべて売れた場合`;
+
+  const cls=v=>v<0?'minus':'plus';
+  const yen=v=>(v<0?'－':'＋')+fmt(Math.abs(v));
+  document.getElementById('orderTable').innerHTML=`<thead><tr><th>ロット</th><th>発注するとき</th><th>仕入れ代</th><th>発注直後の手元</th><th>次の発注直前の手元</th></tr></thead><tbody>${
+    rows.map(r=>`<tr><td>第${r.no}ロット（${r.qty.toLocaleString('ja-JP')}個）</td><td>${r.no===1?'最初':`${r.orderAt.toLocaleString('ja-JP')}個売れたとき`}</td><td>${fmt(r.cost)}</td><td class="${cls(r.afterOrder)}">${yen(r.afterOrder)}</td><td class="${cls(r.soldOut)}">${yen(r.soldOut)}<div style="font-size:0.66rem;color:#9e9e9e;font-weight:400;">${r.soldOutAt.toLocaleString('ja-JP')}個売れた時点${r.no===lots.length?'（売り切り）':''}</div></td></tr>`).join('')
+  }</tbody>`;
+
+  renderLotChart(fixedCost,unitCost,incomePerUnit,lots,stockQty);
+}
+
+function renderLotChart(fixedCost,unitCost,incomePerUnit,lots,stockQty) {
   const canvas=document.getElementById('lotChart');
   if(lotChartInst){lotChartInst.destroy();}
-  const maxUnits=Math.max(be2>0?be2*1.4:be1*1.6,lot1+(lot2||0)+10);
-  const step=Math.max(1,Math.ceil(maxUnits/80));
-  const labels=[],dataLot1=[],dataLot2=[];
-  const hasLot2=lot2>0;
-  for(let u=0;u<=maxUnits;u+=step){
-    labels.push(u);
-    dataLot1.push(Math.round(-(fixedCost+lot1Cost)+u*incomePerUnit));
-    if(hasLot2){const d=u>=triggerUnits?lot2Cost:0;dataLot2.push(Math.round(-(fixedCost+lot1Cost+d)+u*incomePerUnit));}
-  }
-  const datasets=[{label:`第1ロットのみ（${lot1}個）`,data:dataLot1,borderColor:'#1565C0',backgroundColor:'rgba(21,101,192,0.04)',fill:false,tension:0,borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4}];
-  if(hasLot2)datasets.push({label:`第1+2ロット（${lot1+lot2}個）`,data:dataLot2,borderColor:'#E65100',backgroundColor:'rgba(230,81,0,0.05)',fill:false,tension:0,borderWidth:2.5,pointRadius:0,pointHoverRadius:4});
-  const triggerIdx=labels.findIndex(l=>l>=triggerUnits);
-  const annotations={zeroLine:{type:'line',yMin:0,yMax:0,borderColor:'#9e9e9e',borderWidth:1,borderDash:[3,3]}};
-  if(hasLot2&&triggerIdx>=0)annotations.trig={type:'line',xMin:triggerIdx,xMax:triggerIdx,borderColor:'#7B1FA2',borderWidth:2,borderDash:[4,4],label:{content:`第2ロット発注（${triggerUnits}個目）`,display:true,position:'end',backgroundColor:'#7B1FA2',color:'#fff',font:{size:9,weight:'bold'},padding:{x:6,y:3},borderRadius:3}};
-  const be1Idx=labels.findIndex(l=>l>=be1);
-  if(be1Idx>=0)annotations.be1={type:'line',xMin:be1Idx,xMax:be1Idx,borderColor:'#1565C0',borderWidth:1.5,borderDash:[3,3],label:{content:`ロット1回収 ${be1}個`,display:true,position:'start',backgroundColor:'#1565C0',color:'#fff',font:{size:9,weight:'bold'},padding:{x:6,y:3},borderRadius:3}};
-  if(hasLot2&&isFinite(be2)){const be2Idx=labels.findIndex(l=>l>=be2);if(be2Idx>=0)annotations.be2={type:'line',xMin:be2Idx,xMax:be2Idx,borderColor:'#E65100',borderWidth:2,borderDash:[5,4],label:{content:`ロット1+2回収 ${be2}個`,display:true,position:'start',backgroundColor:'#E65100',color:'#fff',font:{size:9,weight:'bold'},padding:{x:6,y:3},borderRadius:3}};}
-  lotChartInst=new Chart(canvas,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:true,labels:{font:{size:11,family:"'BIZ UDPGothic',sans-serif"},boxWidth:20}},
-      tooltip:{callbacks:{title:ctx=>`${ctx[0].label}個販売時`,label:ctx=>{const v=ctx.raw;return`${ctx.dataset.label}: ${v>=0?fmt(v):'未回収 '+fmt(Math.abs(v))}`}}},
-      annotation:{annotations}},
-    scales:{x:{title:{display:true,text:'累計販売個数',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',maxTicksLimit:12},grid:{color:'#f5f5f5'}},
-      y:{title:{display:true,text:'累計キャッシュ（円）',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',callback:v=>{const a=Math.abs(v);return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP');}},grid:{color:'#f5f5f5'}}}}});
+  // 発注の瞬間は「発注前→発注後」の2点を置いて、ガクッと下がる形にする
+  const pts=[]; let paid=fixedCost;
+  const orderPts=[];
+  lots.forEach(l=>{
+    const x=l.orderAt;
+    pts.push({x,y:Math.round(x*incomePerUnit-paid)});
+    paid+=l.qty*unitCost;
+    const y=Math.round(x*incomePerUnit-paid);
+    pts.push({x,y});
+    orderPts.push({x,y,no:l.no});
+  });
+  pts.push({x:stockQty,y:Math.round(stockQty*incomePerUnit-paid)});
+
+  const annotations={zeroLine:{type:'line',yMin:0,yMax:0,borderColor:'#757575',borderWidth:1.5}};
+  orderPts.forEach((o,i)=>{
+    annotations['o'+i]={type:'label',xValue:o.x,yValue:o.y,yAdjust:16,content:o.no===1?'第1仕入れ':`第${o.no}発注`,xAdjust:o.x===0?28:0,
+      backgroundColor:'rgba(255,255,255,0.9)',color:'#C62828',font:{size:10,weight:'bold'},padding:2};
+  });
+
+  lotChartInst=new Chart(canvas,{type:'scatter',
+    data:{datasets:[
+      {label:'手元のお金',data:pts,showLine:true,tension:0,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,
+        borderColor:'#1565C0',
+        fill:{target:'origin',above:'rgba(46,125,50,0.10)',below:'rgba(198,40,40,0.10)'}},
+      {label:'発注',data:orderPts,pointRadius:5,pointBackgroundColor:'#C62828',pointBorderColor:'#fff',pointBorderWidth:1.5,showLine:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{
+          title:ctx=>`${ctx[0].parsed.x.toLocaleString('ja-JP')}個売れた時点`,
+          label:ctx=>{const v=ctx.parsed.y;const head=ctx.dataset.label==='発注'?`第${ctx.raw.no}ロット発注後 `:'手元 ';return head+(v>=0?'＋':'－')+fmt(Math.abs(v));}}},
+        annotation:{annotations}},
+      scales:{
+        x:{type:'linear',min:0,max:stockQty,title:{display:true,text:'累計販売個数',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',maxTicksLimit:12},grid:{color:'#f5f5f5'}},
+        y:{title:{display:true,text:'手元のお金（円）',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',callback:v=>{const a=Math.abs(v);return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP');}},grid:{color:'#f5f5f5'}}}}});
 }
 
 /* ══════════════════════════════════════
@@ -1458,7 +1528,9 @@ function addSimToTracker() {
   const fee   = parseNum(document.getElementById('feeRate').value);
   const fixed = calcTotalCost();
   const lot1  = parseNum(document.getElementById('lot1').value);
-  const lot2  = parseNum(document.getElementById('lot2').value);
+  // トラッカーには追加発注の合計数を「第2ロット」として渡す
+  const plan  = getLotPlan();
+  const lot2  = plan.stockQty - plan.lot1;
 
   if (!name)      { alert('商品名を入力してください'); return; }
   if (price <= 0) { alert('販売価格を入力してください'); return; }
