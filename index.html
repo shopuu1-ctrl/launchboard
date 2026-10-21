@@ -688,22 +688,10 @@
       </div>
 
       <div class="card">
-        <h2>想定販売ペース（任意）</h2>
-        <p class="section-note">入力すると「何日 / 週 / ヶ月でプラス転換するか」を自動計算します</p>
-        <div class="field-row">
-          <div class="field" style="margin-bottom:0">
-            <label>販売個数</label>
-            <input type="number" id="paceValue" placeholder="10" min="1" oninput="update()">
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label>期間</label>
-            <select id="paceUnit" onchange="update()">
-              <option value="day">1日あたり</option>
-              <option value="week" selected>1週あたり</option>
-              <option value="month">1ヶ月あたり</option>
-            </select>
-          </div>
-        </div>
+        <h2>月ごとの販売見込み</h2>
+        <p class="section-note">何ヶ月目に何個売れそうかを入れてください。回収期間と、追加発注の量（直前1ヶ月の売れ行きから計算）に使います。最後に入れた月より先は、その月と同じペースで売れる前提です。</p>
+        <div class="cost-list" id="salesList"></div>
+        <button class="btn-add" onclick="addSalesMonth()">+ 月を追加</button>
       </div>
 
       <div class="card">
@@ -715,8 +703,12 @@
             <input type="number" id="lot1" placeholder="10" min="1" oninput="update()">
           </div>
           <div class="field" style="margin-bottom:0">
-            <label>追加発注1回あたりの数</label>
-            <input type="number" id="lot2" placeholder="30" min="1" oninput="update()">
+            <label>追加発注の量</label>
+            <select id="lotCover" onchange="update()">
+              <option value="1" selected>直前1ヶ月の売れ行き × 1ヶ月分</option>
+              <option value="1.5">直前1ヶ月の売れ行き × 1.5ヶ月分</option>
+              <option value="2">直前1ヶ月の売れ行き × 2ヶ月分</option>
+            </select>
           </div>
         </div>
         <div class="field-row" style="margin-top:10px;">
@@ -815,7 +807,7 @@
       <div id="lotSection" style="display:none">
         <div class="chart-card">
           <h2>追加発注していくと手元のお金はどうなるか</h2>
-          <p class="chart-desc">売れるたびにお金が戻り、発注するたびにガクッと減ります。線が0より上なら、使ったお金を全部取り戻して手元にプラスがある状態です。</p>
+          <p class="chart-desc">横軸はリリースからの月数。売れるたびにお金が戻り、発注するたびにガクッと減ります。線が0より上なら、使ったお金を全部取り戻して手元にプラスがある状態です。</p>
           <div class="kpi-grid" style="margin:12px 0 14px;">
             <div class="kpi-card" style="border-left:3px solid var(--c-danger);">
               <div class="kpi-label">用意しておくお金</div>
@@ -823,9 +815,9 @@
               <div class="kpi-unit" id="kpi-need-cash-unit">一番お金が減るとき</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label">追加発注1回で増える利益</div>
-              <div class="kpi-value" id="kpi-per-order">—</div>
-              <div class="kpi-unit" id="kpi-per-order-unit">円</div>
+              <div class="kpi-label">全部売り切るまで</div>
+              <div class="kpi-value" id="kpi-sellout">—</div>
+              <div class="kpi-unit" id="kpi-sellout-unit">—</div>
             </div>
             <div class="kpi-card success-highlight">
               <div class="kpi-label">全部売り切ったときの利益</div>
@@ -1151,6 +1143,50 @@ function renderCostList() {
   `).join('');
 }
 
+// 月ごとの販売見込み（1ヶ月目, 2ヶ月目…）
+let salesMonths = ['', '', ''];
+
+function renderSalesList() {
+  const list = document.getElementById('salesList');
+  list.innerHTML = salesMonths.map((v, i) => `
+    <div class="cost-item">
+      <input type="text" value="${i + 1}ヶ月目" readonly tabindex="-1" style="background:#fafafa;color:#757575;">
+      <input type="number" class="amount-input" placeholder="個数" value="${v}"
+        oninput="salesMonths[${i}]=this.value;update()" min="0">
+      <button class="btn-remove" onclick="removeSalesMonth(${i})">×</button>
+    </div>
+  `).join('');
+}
+function addSalesMonth() { salesMonths.push(''); renderSalesList(); update(); }
+function removeSalesMonth(i) { salesMonths.splice(i,1); renderSalesList(); update(); }
+
+// 入力された月の販売数（後ろの空欄は除く）
+function getMonthlySales() {
+  const a = salesMonths.map(parseNum);
+  while (a.length && a[a.length-1] <= 0) a.pop();
+  return a;
+}
+// m ヶ月目（0始まり）の1日あたり販売数。入力した月より先は最後の月と同じ
+function dayRate(sales, m) { return (m < sales.length ? sales[m] : sales[sales.length-1]) / 30; }
+// リリースから day 日目までの累計販売数
+function unitsByDay(sales, day) {
+  let u = 0, m = 0;
+  while (day > 0) { const d = Math.min(30, day); u += dayRate(sales, m) * d; day -= d; m++; }
+  return u;
+}
+// 累計 units 個売れるのはリリースから何日目か
+function dayOfUnits(sales, units) {
+  if (units <= 0) return 0;
+  let u = 0;
+  for (let m = 0; m < 600; m++) {
+    const r = dayRate(sales, m);
+    if (r > 0 && u + r * 30 >= units) return m * 30 + (units - u) / r;
+    u += r * 30;
+  }
+  return Infinity;
+}
+function monthText(day) { return day < 30 ? `${Math.ceil(day)}日` : `約${(day / 30).toFixed(1)}ヶ月`; }
+
 function addCostItem() { costItems.push({ label:'', amount:'' }); renderCostList(); update(); }
 function removeCostItem(i) { costItems.splice(i,1); renderCostList(); update(); }
 function parseNum(v) { const n = parseFloat(String(v).replace(/,/g,'')); return isNaN(n)||!isFinite(n)?0:n; }
@@ -1234,34 +1270,25 @@ function update() {
   document.getElementById('kpi-gross').textContent     = Math.round(grossProfit).toLocaleString('ja-JP');
   document.getElementById('kpi-margin').textContent    = marginRate.toFixed(1);
 
-  const paceValue = parseNum(document.getElementById('paceValue').value);
-  const paceUnit  = document.getElementById('paceUnit').value;
+  const sales     = getMonthlySales();
   const paceCard  = document.getElementById('kpi-recovery-card');
   const timeCard  = document.getElementById('timeChartCard');
+  const beDay     = sales.length ? dayOfUnits(sales, breakEvenUnits) : Infinity;
+  const canRecover = stockQty === 0 || breakEvenUnits <= stockQty;
 
-  if (paceValue >= 1) {
+  if (sales.length && isFinite(beDay)) {
+    paceCard.style.display = '';
+    document.getElementById('kpi-recovery').textContent      = canRecover ? monthText(beDay) : '回収できず';
+    document.getElementById('kpi-recovery-unit').textContent = canRecover ? 'でプラス転換' : '仕入れ数が足りません';
     // 仕入れロットがあるときは下の「追加発注」グラフで見るので、ここのグラフは出さない
-    paceCard.style.display = ''; timeCard.style.display = stockQty > 0 ? 'none' : '';
-    const perDay = paceUnit === 'day' ? paceValue : paceUnit === 'week' ? paceValue/7 : paceValue/30;
-    const daysToBreakEven = breakEvenUnits / perDay;
-    let recoveryText, recoveryUnit;
-    if (paceUnit === 'day') {
-      recoveryText = Math.ceil(daysToBreakEven).toLocaleString('ja-JP');
-      recoveryUnit = '日でプラス転換';
-    } else if (paceUnit === 'week') {
-      const w = daysToBreakEven / 7;
-      recoveryText = w < 1 ? '1週未満' : Math.ceil(w).toLocaleString('ja-JP');
-      recoveryUnit = w < 1 ? '1週未満でプラス転換' : '週でプラス転換';
-    } else {
-      const m = daysToBreakEven / 30;
-      recoveryText = m < 1 ? '1ヶ月未満' : Math.ceil(m).toLocaleString('ja-JP');
-      recoveryUnit = m < 1 ? '1ヶ月未満でプラス転換' : 'ヶ月でプラス転換';
-    }
-    document.getElementById('kpi-recovery').textContent      = recoveryText;
-    document.getElementById('kpi-recovery-unit').textContent = recoveryUnit;
-    if (stockQty === 0) renderTimeChart(totalOut, perUnit, perDay, daysToBreakEven, paceUnit, paceValue);
+    timeCard.style.display = stockQty > 0 ? 'none' : '';
+    if (stockQty === 0) renderTimeChart(totalOut, perUnit, sales, beDay);
   } else {
     paceCard.style.display = 'none'; timeCard.style.display = 'none';
+  }
+
+  if (stockQty > 0 && !sales.length) {
+    alertArea.innerHTML = `<div class="alert info">「月ごとの販売見込み」を入れると、追加発注の量と手元のお金の動きを計算します。</div>`;
   }
 
   document.getElementById('unitsChartCard').style.display = stockQty > 0 ? 'none' : '';
@@ -1361,52 +1388,46 @@ function renderUnitsChart(totalCost, grossProfit, breakEvenUnits) {
   });
 }
 
-function renderTimeChart(totalCost, grossProfit, perDay, daysToBreakEven, paceUnit, paceValue) {
+function renderTimeChart(totalOut, perUnit, sales, beDay) {
   const canvas = document.getElementById('timeChart');
   if (timeChartInst) { timeChartInst.destroy(); }
-  const totalDays = Math.max(Math.ceil(daysToBreakEven * 1.7), 14);
-  const stepDays  = Math.max(1, Math.ceil(totalDays / 50));
-  const labels = [], data = [];
-  const labelFn = d => paceUnit==='day' ? `${d}日` : paceUnit==='week' ? (d===0?'0週':`${Math.ceil(d/7)}週`) : `${(d/30).toFixed(1)}ヶ月`;
-  for (let d=0; d<=totalDays; d+=stepDays) { labels.push(labelFn(d)); data.push(Math.round(d*perDay*grossProfit-totalCost)); }
-  const ptColors = data.map(v => v>=0?'rgba(46,125,50,0.9)':'rgba(198,40,40,0.9)');
-  const beDataIdx = Math.round(daysToBreakEven/stepDays);
-  const beLabel = paceUnit==='day'?`${Math.ceil(daysToBreakEven)}日でプラス転換`:paceUnit==='week'?`${Math.ceil(daysToBreakEven/7)}週でプラス転換`:`${Math.ceil(daysToBreakEven/30)}ヶ月でプラス転換`;
+  const endDay = Math.max(Math.ceil(beDay * 1.6), 90);
+  const pts = [];
+  for (let d = 0; d <= endDay; d += Math.max(1, Math.ceil(endDay / 60))) {
+    pts.push({ x: d / 30, y: Math.round(unitsByDay(sales, d) * perUnit - totalOut) });
+  }
   timeChartInst = new Chart(canvas, {
-    type:'line',
-    data:{labels,datasets:[{label:'累計損益',data,
-      borderColor:ctx=>{const{ctx:c,chartArea}=ctx.chart;if(!chartArea)return'#1565C0';const g=c.createLinearGradient(chartArea.left,0,chartArea.right,0);const r=Math.min(beDataIdx/labels.length,1);g.addColorStop(0,'rgba(198,40,40,0.8)');g.addColorStop(Math.max(0,r-0.01),'#F57C00');g.addColorStop(Math.min(1,r+0.01),'rgba(46,125,50,0.9)');g.addColorStop(1,'rgba(46,125,50,0.9)');return g;},
-      backgroundColor:ctx=>{const{ctx:c,chartArea}=ctx.chart;if(!chartArea)return'rgba(21,101,192,0.05)';const g=c.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,'rgba(46,125,50,0.12)');g.addColorStop(0.5,'rgba(21,101,192,0.04)');g.addColorStop(1,'rgba(198,40,40,0.1)');return g;},
-      fill:true,tension:0.15,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:ptColors}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>ctx.raw>=0?`累計利益: ${fmt(ctx.raw)}`:`未回収: ${fmt(Math.abs(ctx.raw))}`}},
-        annotation:{annotations:{
-          zeroLine:{type:'line',yMin:0,yMax:0,borderColor:'#9e9e9e',borderWidth:1,borderDash:[3,3]},
-          beV:{type:'line',xMin:beDataIdx,xMax:beDataIdx,borderColor:'#F57C00',borderWidth:2,borderDash:[5,4],
-            label:{content:beLabel,display:true,position:'start',backgroundColor:'#F57C00',color:'#fff',font:{size:10,weight:'bold'},padding:{x:7,y:3},borderRadius:3}}
-        }}},
-      scales:{
-        x:{title:{display:true,text:'リリースからの経過時間',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',maxTicksLimit:10},grid:{color:'#f5f5f5'}},
-        y:{title:{display:true,text:'累計損益（円）',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',callback:v=>{const a=Math.abs(v);return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP');}},grid:{color:'#f5f5f5'}}
-      }}
+    type: 'scatter',
+    data: { datasets: [{ label: '累計損益', data: pts, showLine: true, tension: 0, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4,
+      borderColor: '#1565C0', fill: { target: 'origin', above: 'rgba(46,125,50,0.10)', below: 'rgba(198,40,40,0.10)' } }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { title: ctx => `約${ctx[0].parsed.x.toFixed(1)}ヶ月`, label: ctx => ctx.parsed.y >= 0 ? `累計利益: ${fmt(ctx.parsed.y)}` : `未回収: ${fmt(Math.abs(ctx.parsed.y))}` } },
+        annotation: { annotations: {
+          zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: '#757575', borderWidth: 1.5 },
+          beV: { type: 'line', xMin: beDay / 30, xMax: beDay / 30, borderColor: '#F57C00', borderWidth: 2, borderDash: [5, 4],
+            label: { content: `${monthText(beDay)}でプラス転換`, display: true, position: 'start', backgroundColor: '#F57C00', color: '#fff', font: { size: 10, weight: 'bold' }, padding: { x: 7, y: 3 }, borderRadius: 3 } }
+        } } },
+      scales: {
+        x: { type: 'linear', min: 0, max: endDay / 30, title: { display: true, text: 'リリースからの月数', font: { size: 10, weight: 'bold' }, color: '#757575' }, ticks: { font: { size: 9 }, color: '#757575', stepSize: 1 }, grid: { color: '#f5f5f5' } },
+        y: { title: { display: true, text: '累計損益（円）', font: { size: 10, weight: 'bold' }, color: '#757575' }, ticks: { font: { size: 9 }, color: '#757575', callback: v => { const a = Math.abs(v); return a >= 10000 ? (v / 10000).toFixed(a >= 100000 ? 0 : 1) + '万' : v.toLocaleString('ja-JP'); } }, grid: { color: '#f5f5f5' } }
+      } }
   });
-  const pl=paceUnit==='day'?'日':paceUnit==='week'?'週':'ヶ月';
-  document.getElementById('timeChartDesc').textContent=`横軸：リリースからの経過時間 ／ 想定ペース: ${paceValue}個 / ${pl}`;
+  document.getElementById('timeChartDesc').textContent = '横軸：リリースからの月数（月ごとの販売見込みで計算）';
 }
 
 function updateOutflowSummary(fixedCost, unitCost, sellingPrice) {
-  const {lot1, lot2, repeat, stockQty}=getLotPlan();
+  const {lot1, lots, stockQty}=getLotPlan();
   const card=document.getElementById('outflowCard');
   const lot1Cost=lot1*unitCost;
-  const addCost=lot2*repeat*unitCost;
+  const addQty=stockQty-lot1;
   const total=fixedCost+stockQty*unitCost;
   if(total<=0){card.style.display='none';return;}
   card.style.display='';
   const rows=[];
   costItems.filter(c=>parseNum(c.amount)>0).forEach(c=>{rows.push({label:c.label||'（項目名未入力）',sub:null,amount:parseNum(c.amount)});});
   if(lot1>0&&unitCost>0) rows.push({label:'第1ロット 仕入れ代金',sub:`${lot1}個 × ${fmt(unitCost)}`,amount:lot1Cost});
-  if(lot2>0&&unitCost>0) rows.push({label:`追加発注 仕入れ代金（第2〜第${repeat+1}ロット）`,sub:`${lot2}個 × ${fmt(unitCost)} × ${repeat}回`,amount:addCost});
+  if(addQty>0&&unitCost>0) rows.push({label:`追加発注 仕入れ代金（第2〜第${lots.length}ロット）`,sub:`合計${addQty.toLocaleString('ja-JP')}個 × ${fmt(unitCost)}`,amount:addQty*unitCost});
   document.getElementById('outflowRows').innerHTML=rows.map((r,i)=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;${i>0?'border-top:1px solid #f0f0f0;':''}">
       <div>
@@ -1418,79 +1439,100 @@ function updateOutflowSummary(fixedCost, unitCost, sellingPrice) {
   document.getElementById('outflowTotal').textContent=fmt(total);
 }
 
-// 仕入れロットの計画（第1ロット＋追加発注×回数）。発注する時点（累計何個売れたとき）も計算する
+// 仕入れロットの計画（第1ロット＋追加発注×回数）
+// 追加発注は「前のロットが決まった割合売れたとき」に、直前1ヶ月の売れ行き×○ヶ月分を発注する
 function getLotPlan() {
   const lot1=parseNum(document.getElementById('lot1').value);
-  const lot2=lot1>0?parseNum(document.getElementById('lot2').value):0;
-  const repeat=lot2>0?parseNum(document.getElementById('lotRepeat').value):0;
+  const repeat=lot1>0?parseNum(document.getElementById('lotRepeat').value):0;
   const trigger=parseNum(document.getElementById('lotTrigger').value);
+  const cover=parseNum(document.getElementById('lotCover').value);
+  const sales=getMonthlySales();
   const lots=[];
-  if(lot1>0) lots.push({no:1,qty:lot1,orderAt:0});
+  if(lot1>0) lots.push({no:1,qty:lot1,orderAt:0,day:0,last30:0});
   let lotStart=0;  // 前のロットを売り始めた時点の累計販売数
-  for(let k=0;k<repeat;k++){
+  for(let k=0;k<repeat&&sales.length;k++){
     const prev=lots[lots.length-1];
-    lots.push({no:lots.length+1,qty:lot2,orderAt:lotStart+Math.ceil(prev.qty*trigger)});
+    const orderAt=lotStart+Math.ceil(prev.qty*trigger);
+    const day=dayOfUnits(sales,orderAt);
+    if(!isFinite(day)) break;
+    // 直前1ヶ月の売れ行き（リリースから1ヶ月未満なら、それまでのペースを1ヶ月分に換算）
+    const span=Math.min(30,day);
+    const last30=span>0?(unitsByDay(sales,day)-unitsByDay(sales,day-span))*30/span:sales[0];
+    lots.push({no:lots.length+1,qty:Math.max(1,Math.round(last30*cover)),orderAt,day,last30});
     lotStart+=prev.qty;
   }
-  return {lot1,lot2,repeat,lots,stockQty:lots.reduce((s,l)=>s+l.qty,0)};
+  return {lot1,cover,sales,lots,stockQty:lots.reduce((s,l)=>s+l.qty,0)};
 }
 
 function updateLotAnalysis(fixedCost, unitCost, incomePerUnit) {
-  const {lot2,lots,stockQty}=getLotPlan();
+  const {cover,sales,lots,stockQty}=getLotPlan();
   const section=document.getElementById('lotSection');
   const summBar=document.getElementById('lotSummaryBar');
-  if(!lots.length||incomePerUnit<=0){section.style.display='none';summBar.style.display='none';return;}
-  summBar.style.display='';
-  document.getElementById('lotTotalDisplay').textContent=stockQty.toLocaleString('ja-JP')+'個';
+  if(!lots.length){summBar.style.display='none';}
+  else{summBar.style.display='';document.getElementById('lotTotalDisplay').textContent=stockQty.toLocaleString('ja-JP')+'個';}
+  if(!lots.length||!sales.length||incomePerUnit<=0){section.style.display='none';return;}
   section.style.display='';
 
-  // 発注ごとに「発注直後」と「そのロットを売り切った時」の手元のお金を計算
+  // 発注ごとに「発注直後」と「次の発注直前（最後は売り切り）」の手元のお金を計算
   let paid=fixedCost, sold=0, minCash=0, minAt=null;
   const rows=lots.map((l,i)=>{
     paid+=l.qty*unitCost;
     const afterOrder=l.orderAt*incomePerUnit-paid;
     if(afterOrder<minCash){minCash=afterOrder;minAt=l;}
     sold+=l.qty;
-    const nextAt=lots[i+1]?lots[i+1].orderAt:Infinity;
-    // 次の発注より前にこのロットを売り切る場合だけ「売り切った時」の値が意味を持つ
-    const soldOut=Math.min(sold,nextAt)*incomePerUnit-paid;
-    return {...l,cost:l.qty*unitCost,afterOrder,soldOut,soldOutAt:Math.min(sold,nextAt),paid};
+    const endAt=Math.min(sold,lots[i+1]?lots[i+1].orderAt:Infinity);
+    return {...l,cost:l.qty*unitCost,afterOrder,endCash:endAt*incomePerUnit-paid,endAt,endDay:dayOfUnits(sales,endAt)};
   });
   const finalProfit=stockQty*incomePerUnit-paid;
+  const sellOutDay=dayOfUnits(sales,stockQty);
 
   document.getElementById('kpi-need-cash').textContent=fmt(Math.max(0,-minCash));
   document.getElementById('kpi-need-cash-unit').textContent=minAt?(minAt.no===1?'最初の仕入れ直後':`第${minAt.no}ロット発注の直後`):'持ち出しなし';
-  const perOrder=lot2*(incomePerUnit-unitCost);
-  document.getElementById('kpi-per-order').textContent=lot2>0?fmt(perOrder):'—';
-  document.getElementById('kpi-per-order-unit').textContent=lot2>0?`${lot2}個売り切るごとに`:'追加発注なし';
+  document.getElementById('kpi-sellout').textContent=monthText(sellOutDay);
+  document.getElementById('kpi-sellout-unit').textContent=`${stockQty.toLocaleString('ja-JP')}個（第${lots.length}ロットまで）`;
   document.getElementById('kpi-final-profit').textContent=fmt(finalProfit);
   document.getElementById('kpi-final-profit').className='kpi-value '+(finalProfit>=0?'c-success':'c-danger');
   document.getElementById('kpi-final-profit-unit').textContent=`${stockQty.toLocaleString('ja-JP')}個すべて売れた場合`;
 
+  const n=v=>Math.round(v).toLocaleString('ja-JP');
+  const sub=t=>`<div style="font-size:0.66rem;color:#9e9e9e;font-weight:400;">${t}</div>`;
   const cls=v=>v<0?'minus':'plus';
   const yen=v=>(v<0?'－':'＋')+fmt(Math.abs(v));
   document.getElementById('orderTable').innerHTML=`<thead><tr><th>ロット</th><th>発注するとき</th><th>仕入れ代</th><th>発注直後の手元</th><th>次の発注直前の手元</th></tr></thead><tbody>${
-    rows.map(r=>`<tr><td>第${r.no}ロット（${r.qty.toLocaleString('ja-JP')}個）</td><td>${r.no===1?'最初':`${r.orderAt.toLocaleString('ja-JP')}個売れたとき`}</td><td>${fmt(r.cost)}</td><td class="${cls(r.afterOrder)}">${yen(r.afterOrder)}</td><td class="${cls(r.soldOut)}">${yen(r.soldOut)}<div style="font-size:0.66rem;color:#9e9e9e;font-weight:400;">${r.soldOutAt.toLocaleString('ja-JP')}個売れた時点${r.no===lots.length?'（売り切り）':''}</div></td></tr>`).join('')
+    rows.map(r=>`<tr>
+      <td>第${r.no}ロット（${n(r.qty)}個）${r.no===1?sub('最初に入れた数'):sub(`直前1ヶ月 ${n(r.last30)}個 × ${cover}ヶ月分`)}</td>
+      <td>${r.no===1?'最初':`${n(r.orderAt)}個売れたとき${sub(monthText(r.day)+'後')}`}</td>
+      <td>${fmt(r.cost)}</td>
+      <td class="${cls(r.afterOrder)}">${yen(r.afterOrder)}</td>
+      <td class="${cls(r.endCash)}">${yen(r.endCash)}${sub(`${n(r.endAt)}個売れた時点・${monthText(r.endDay)}後${r.no===lots.length?'（売り切り）':''}`)}</td>
+    </tr>`).join('')
   }</tbody>`;
 
-  renderLotChart(fixedCost,unitCost,incomePerUnit,lots,stockQty);
+  renderLotChart(fixedCost,unitCost,incomePerUnit,sales,lots,stockQty,sellOutDay);
 }
 
-function renderLotChart(fixedCost,unitCost,incomePerUnit,lots,stockQty) {
+function renderLotChart(fixedCost,unitCost,incomePerUnit,sales,lots,stockQty,sellOutDay) {
   const canvas=document.getElementById('lotChart');
   if(lotChartInst){lotChartInst.destroy();}
-  // 発注の瞬間は「発注前→発注後」の2点を置いて、ガクッと下がる形にする
-  const pts=[]; let paid=fixedCost;
-  const orderPts=[];
-  lots.forEach(l=>{
-    const x=l.orderAt;
-    pts.push({x,y:Math.round(x*incomePerUnit-paid)});
-    paid+=l.qty*unitCost;
-    const y=Math.round(x*incomePerUnit-paid);
-    pts.push({x,y});
-    orderPts.push({x,y,no:l.no});
+  // グラフの点：月の区切り・発注日・売り切り日。発注日は「発注前→発注後」の2点でガクッと下げる
+  const days=new Set([sellOutDay]);
+  for(let d=0;d<sellOutDay;d+=30) days.add(d);
+  lots.forEach(l=>days.add(l.day));
+  const pts=[], orderPts=[];
+  let paid=fixedCost;
+  [...days].sort((a,b)=>a-b).forEach(d=>{
+    const units=Math.min(stockQty,unitsByDay(sales,d));
+    const ordersHere=lots.filter(l=>l.day===d);
+    if(ordersHere.length){
+      pts.push({x:d/30,y:Math.round(units*incomePerUnit-paid),units});
+      ordersHere.forEach(l=>{paid+=l.qty*unitCost;});
+      const y=Math.round(units*incomePerUnit-paid);
+      pts.push({x:d/30,y,units});
+      ordersHere.forEach(l=>orderPts.push({x:d/30,y,units,no:l.no,qty:l.qty}));
+    }else{
+      pts.push({x:d/30,y:Math.round(units*incomePerUnit-paid),units});
+    }
   });
-  pts.push({x:stockQty,y:Math.round(stockQty*incomePerUnit-paid)});
 
   const annotations={zeroLine:{type:'line',yMin:0,yMax:0,borderColor:'#757575',borderWidth:1.5}};
   orderPts.forEach((o,i)=>{
@@ -1508,12 +1550,12 @@ function renderLotChart(fixedCost,unitCost,incomePerUnit,lots,stockQty) {
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
         tooltip:{callbacks:{
-          title:ctx=>`${ctx[0].parsed.x.toLocaleString('ja-JP')}個売れた時点`,
-          label:ctx=>{const v=ctx.parsed.y;const head=ctx.dataset.label==='発注'?`第${ctx.raw.no}ロット発注後 `:'手元 ';return head+(v>=0?'＋':'－')+fmt(Math.abs(v));}}},
+          title:ctx=>`${monthText(ctx[0].parsed.x*30)}後（${Math.round(ctx[0].raw.units).toLocaleString('ja-JP')}個売れた時点）`,
+          label:ctx=>{const v=ctx.parsed.y;const head=ctx.dataset.label==='発注'?`第${ctx.raw.no}ロット ${ctx.raw.qty}個 発注後 `:'手元 ';return head+(v>=0?'＋':'－')+fmt(Math.abs(v));}}},
         annotation:{annotations}},
       scales:{
-        x:{type:'linear',min:0,max:stockQty,title:{display:true,text:'累計販売個数',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',maxTicksLimit:12},grid:{color:'#f5f5f5'}},
-        y:{title:{display:true,text:'手元のお金（円）',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',callback:v=>{const a=Math.abs(v);return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP');}},grid:{color:'#f5f5f5'}}}}});
+        x:{type:'linear',min:0,max:Math.ceil(sellOutDay/30),title:{display:true,text:'リリースからの月数',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',stepSize:1,callback:v=>`${v}ヶ月`},grid:{color:'#f5f5f5'}},
+        y:{grace:'20%',title:{display:true,text:'手元のお金（円）',font:{size:10,weight:'bold'},color:'#757575'},ticks:{font:{size:9},color:'#757575',callback:v=>{const a=Math.abs(v);return a>=10000?(v/10000).toFixed(a>=100000?0:1)+'万':v.toLocaleString('ja-JP');}},grid:{color:'#f5f5f5'}}}}});
 }
 
 /* ══════════════════════════════════════
@@ -2114,6 +2156,7 @@ async function fetchRakutenSales(productId) {
 window.addEventListener('DOMContentLoaded', () => {
   // Simulator init
   renderCostList();
+  renderSalesList();
   update();
   // Tracker init
   load();
