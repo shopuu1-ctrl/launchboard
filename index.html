@@ -304,6 +304,20 @@
       padding: 18px 22px;
       margin-bottom: 14px;
     }
+    /* ── 損益分岐点（全部取り戻す個数） ── */
+    .be-hero {
+      background: #f5f9ff;
+      border: 2px solid #1565C0;
+      border-radius: 4px;
+      padding: 18px 22px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .be-hero-label { font-size: 0.86rem; font-weight: 700; color: #1565C0; }
+    .be-hero-value { font-size: 3rem; font-weight: 700; color: #1565C0; line-height: 1.2; margin-top: 6px; }
+    .be-hero-value small { font-size: 1.1rem; margin-left: 4px; }
+    .be-hero-formula { font-size: 0.85rem; color: #424242; margin-top: 6px; }
+    .be-hero-note { font-size: 0.72rem; color: #757575; margin-top: 6px; line-height: 1.5; }
     .outflow-card-title {
       font-size: 0.86rem;
       font-weight: 700;
@@ -658,12 +672,12 @@
       </div>
 
       <div class="card">
-        <h2>初期投資コスト</h2>
-        <p class="section-note">リリースにかかったすべてのコストを入力してください</p>
+        <h2>初期費用（仕入れ代以外）</h2>
+        <p class="section-note">外注費・デザイン費・販促費など、仕入れ代以外にかかったお金を入力してください。仕入れ代は下の「仕入れロット設定」で入れます。</p>
         <div class="cost-list" id="costList"></div>
         <button class="btn-add" onclick="addCostItem()">+ コスト項目を追加</button>
         <div class="total-bar">
-          <span class="t-label">初期投資 合計</span>
+          <span class="t-label">初期費用 合計</span>
           <span class="t-value" id="totalCostDisplay">¥0</span>
         </div>
       </div>
@@ -736,12 +750,20 @@
         </div>
       </div>
 
+      <!-- 損益分岐点（使ったお金が全部戻る個数） -->
+      <div class="be-hero" id="beHero" style="display:none">
+        <div class="be-hero-label">損益分岐点（使ったお金が全部戻る個数）</div>
+        <div class="be-hero-value"><span id="kpi-breakeven">—</span><small>個</small></div>
+        <div class="be-hero-formula" id="beFormula"></div>
+        <div class="be-hero-note" id="beNote"></div>
+      </div>
+
       <!-- KPI -->
       <div class="kpi-grid" id="kpiSection">
-        <div class="kpi-card highlight">
-          <div class="kpi-label">損益分岐点</div>
-          <div class="kpi-value c-primary" id="kpi-breakeven">—</div>
-          <div class="kpi-unit">個でプラス転換</div>
+        <div class="kpi-card">
+          <div class="kpi-label">1個売れて戻るお金</div>
+          <div class="kpi-value" id="kpi-income">—</div>
+          <div class="kpi-unit">円 / 個（手数料・送料引き後）</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">1個あたり粗利</div>
@@ -762,7 +784,7 @@
 
       <div class="chart-card">
         <h2>累計損益グラフ — 販売個数ベース</h2>
-        <p class="chart-desc">横軸：累計販売個数 ／ 縦軸：累計損益（初期投資を回収しながら推移）</p>
+        <p class="chart-desc">横軸：累計販売個数 ／ 縦軸：手元のお金（使ったお金を回収しながら推移）</p>
         <div class="chart-wrap"><canvas id="unitsChart"></canvas></div>
       </div>
 
@@ -772,32 +794,17 @@
         <div class="chart-wrap"><canvas id="timeChart"></canvas></div>
       </div>
 
-      <div class="chart-card" id="breakdownCard" style="display:none">
-        <h2>初期投資 内訳</h2>
-        <table class="breakdown-table" id="breakdownTable"></table>
-      </div>
-
       <div id="lotSection" style="display:none">
         <div class="kpi-grid" style="margin-bottom:14px;">
-          <div class="kpi-card highlight">
-            <div class="kpi-label">第1ロットのみ 損益分岐</div>
-            <div class="kpi-value c-primary" id="kpi-lot1-be">—</div>
+          <div class="kpi-card">
+            <div class="kpi-label">第1ロット分だけ取り戻すなら</div>
+            <div class="kpi-value" id="kpi-lot1-be">—</div>
             <div class="kpi-unit" id="kpi-lot1-be-unit">個で回収</div>
-          </div>
-          <div class="kpi-card" style="border-left:3px solid var(--c-warn);background:#FFF8E1;">
-            <div class="kpi-label">第2ロット追加後 損益分岐</div>
-            <div class="kpi-value c-warn" id="kpi-lot2-be">—</div>
-            <div class="kpi-unit" id="kpi-lot2-be-unit">個で回収</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">追加発注タイミング</div>
             <div class="kpi-value" id="kpi-trigger">—</div>
             <div class="kpi-unit">個目売れた時点で発注</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">総投資額（仕入れ代金+固定費）</div>
-            <div class="kpi-value" id="kpi-total-invest">—</div>
-            <div class="kpi-unit">円</div>
           </div>
         </div>
         <div class="chart-card">
@@ -1165,16 +1172,43 @@ function update() {
     alertArea.innerHTML = `<div class="alert danger">粗利がマイナスです。販売価格・手数料・送料・仕入れ値を見直してください。（現在: ${fmt(grossProfit)}）</div>`;
     clearCharts(); resetKPIs(); return;
   }
-  if (totalCost <= 0) {
-    alertArea.innerHTML = `<div class="alert warn">初期投資コストを入力するとシミュレーションが開始されます。</div>`;
-    document.getElementById('breakdownCard').style.display = 'none';
+  // 使ったお金の合計 ＝ 初期費用 ＋ 仕入れ代（第1・第2ロット）
+  const lot1      = parseNum(document.getElementById('lot1').value);
+  const lot2      = lot1 > 0 ? parseNum(document.getElementById('lot2').value) : 0;
+  const stockQty  = lot1 + lot2;
+  const totalOut  = totalCost + stockQty * costPrice;
+  const incomePerUnit = sellingPrice - feeAmount - shippingCost;  // 1個売れて戻るお金
+
+  if (totalOut <= 0) {
+    alertArea.innerHTML = `<div class="alert warn">初期費用か仕入れロットを入力するとシミュレーションが開始されます。</div>`;
     clearCharts(); resetKPIs(); return;
   }
 
-  const breakEvenUnits = Math.ceil(totalCost / grossProfit);
-  const breakEvenSales = breakEvenUnits * sellingPrice;
+  // 仕入れ代を先に払っている → 1個売れて戻るお金で割る
+  // 仕入れ数が未入力 → 仕入れ代は売れた分ずつ払う前提なので、粗利で割る
+  const perUnit = stockQty > 0 ? incomePerUnit : grossProfit;
+  const breakEvenUnits = Math.ceil(totalOut / perUnit);
 
+  document.getElementById('beHero').style.display = '';
   document.getElementById('kpi-breakeven').textContent = breakEvenUnits.toLocaleString('ja-JP');
+  const beNote = document.getElementById('beNote');
+  beNote.style.color = '';
+  if (stockQty > 0) {
+    document.getElementById('beFormula').textContent =
+      `使ったお金 ${fmt(totalOut)} ÷ 1個売れて戻るお金 ${fmt(incomePerUnit)}`;
+    if (breakEvenUnits > stockQty) {
+      beNote.textContent = `仕入れた${stockQty.toLocaleString('ja-JP')}個を全部売っても取り戻せません（あと${(breakEvenUnits - stockQty).toLocaleString('ja-JP')}個分足りません）`;
+      beNote.style.color = 'var(--c-danger)';
+    } else {
+      beNote.textContent = `仕入れた${stockQty.toLocaleString('ja-JP')}個を全部売り切ると、利益は ${fmt(stockQty * incomePerUnit - totalOut)}`;
+    }
+  } else {
+    document.getElementById('beFormula').textContent =
+      `初期費用 ${fmt(totalOut)} ÷ 1個あたり粗利 ${fmt(grossProfit)}`;
+    beNote.textContent = '仕入れロットが未入力のため、仕入れ代は売れた分ずつ払う前提です。仕入れ数を入れると、仕入れ代も含めた個数になります。';
+  }
+
+  document.getElementById('kpi-income').textContent    = Math.round(incomePerUnit).toLocaleString('ja-JP');
   document.getElementById('kpi-gross').textContent     = Math.round(grossProfit).toLocaleString('ja-JP');
   document.getElementById('kpi-margin').textContent    = marginRate.toFixed(1);
 
@@ -1202,13 +1236,12 @@ function update() {
     }
     document.getElementById('kpi-recovery').textContent      = recoveryText;
     document.getElementById('kpi-recovery-unit').textContent = recoveryUnit;
-    renderTimeChart(totalCost, grossProfit, perDay, daysToBreakEven, paceUnit, paceValue);
+    renderTimeChart(totalOut, perUnit, perDay, daysToBreakEven, paceUnit, paceValue);
   } else {
     paceCard.style.display = 'none'; timeCard.style.display = 'none';
   }
 
-  renderUnitsChart(totalCost, grossProfit, breakEvenUnits, sellingPrice);
-  renderBreakdown(totalCost, grossProfit, breakEvenUnits, breakEvenSales);
+  renderUnitsChart(totalOut, perUnit, breakEvenUnits);
   updateLotAnalysis(totalCost, costPrice, shippingCost, feeRate, sellingPrice);
   updateOutflowSummary(totalCost, costPrice, sellingPrice);
 
@@ -1218,9 +1251,10 @@ function update() {
 }
 
 function resetKPIs() {
-  ['kpi-breakeven','kpi-gross','kpi-margin','kpi-recovery'].forEach(id => {
+  ['kpi-breakeven','kpi-income','kpi-gross','kpi-margin','kpi-recovery'].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = '—';
   });
+  document.getElementById('beHero').style.display = 'none';
   document.getElementById('kpi-recovery-card').style.display = 'none';
   document.getElementById('timeChartCard').style.display = 'none';
   document.getElementById('lotSection').style.display = 'none';
@@ -1360,16 +1394,6 @@ function updateOutflowSummary(fixedCost, unitCost, sellingPrice) {
   document.getElementById('outflowTotal').textContent=fmt(total);
 }
 
-function renderBreakdown(totalCost, grossProfit, breakEvenUnits, breakEvenSales) {
-  const card=document.getElementById('breakdownCard');
-  const table=document.getElementById('breakdownTable');
-  const valid=costItems.filter(c=>parseNum(c.amount)>0);
-  if(!valid.length){card.style.display='none';return;}
-  card.style.display='';
-  const rows=valid.map(c=>{const amt=parseNum(c.amount);const pct=totalCost>0?(amt/totalCost*100).toFixed(1):'0.0';const units=Math.ceil(amt/grossProfit);return`<tr><td>${escHtml(c.label||'（未入力）')}</td><td>${fmt(amt)}</td><td>${pct}%</td><td>${units.toLocaleString('ja-JP')}個</td></tr>`;}).join('');
-  table.innerHTML=`<thead><tr><th>項目</th><th style="text-align:right">金額</th><th style="text-align:right">構成比</th><th style="text-align:right">回収個数</th></tr></thead><tbody>${rows}<tr class="total-row"><td>合計</td><td>${fmt(totalCost)}</td><td>100%</td><td>${breakEvenUnits.toLocaleString('ja-JP')}個</td></tr></tbody>`;
-}
-
 function updateLotAnalysis(fixedCost, unitCost, shippingCost, feeRate, sellingPrice) {
   const lot1=parseNum(document.getElementById('lot1').value);
   const lot2=parseNum(document.getElementById('lot2').value);
@@ -1389,9 +1413,7 @@ function updateLotAnalysis(fixedCost, unitCost, shippingCost, feeRate, sellingPr
   const be2=incomePerUnit>0?Math.ceil(totalCost2/incomePerUnit):Infinity;
   section.style.display='';
   document.getElementById('kpi-lot1-be').textContent=isFinite(be1)?be1.toLocaleString('ja-JP'):'—';
-  document.getElementById('kpi-lot2-be').textContent=(lot2>0&&isFinite(be2))?be2.toLocaleString('ja-JP'):'—';
   document.getElementById('kpi-trigger').textContent=triggerUnits.toLocaleString('ja-JP');
-  document.getElementById('kpi-total-invest').textContent=fmt(totalCost2).replace('¥','');
   if(!isFinite(be1))return;
   renderLotChart(fixedCost,unitCost,incomePerUnit,lot1,lot1Cost,lot2,lot2Cost,triggerUnits,be1,be2);
 }
