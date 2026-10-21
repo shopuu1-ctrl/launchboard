@@ -1501,10 +1501,10 @@ function updateLotAnalysis(fixedCost, unitCost, incomePerUnit) {
   document.getElementById('orderTable').innerHTML=`<thead><tr><th>ロット</th><th>発注するとき</th><th>仕入れ代</th><th>発注直後の手元</th><th>次の発注直前の手元</th></tr></thead><tbody>${
     rows.map(r=>`<tr>
       <td>第${r.no}ロット（${n(r.qty)}個）${r.no===1?sub('最初に入れた数'):sub(`直前1ヶ月 ${n(r.last30)}個 × ${cover}ヶ月分`)}</td>
-      <td>${r.no===1?'最初':`${n(r.orderAt)}個売れたとき${sub(monthText(r.day)+'後')}`}</td>
+      <td>${r.no===1?'最初':`発売から合計${n(r.orderAt)}個売れたとき${sub(monthText(r.day)+'後')}`}</td>
       <td>${fmt(r.cost)}</td>
       <td class="${cls(r.afterOrder)}">${yen(r.afterOrder)}</td>
-      <td class="${cls(r.endCash)}">${yen(r.endCash)}${sub(`${n(r.endAt)}個売れた時点・${monthText(r.endDay)}後${r.no===lots.length?'（売り切り）':''}`)}</td>
+      <td class="${cls(r.endCash)}">${yen(r.endCash)}${sub(`発売から合計${n(r.endAt)}個売れた時点・${monthText(r.endDay)}後${r.no===lots.length?'（売り切り）':''}`)}</td>
     </tr>`).join('')
   }</tbody>`;
 
@@ -1550,7 +1550,7 @@ function renderLotChart(fixedCost,unitCost,incomePerUnit,sales,lots,stockQty,sel
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
         tooltip:{callbacks:{
-          title:ctx=>`${monthText(ctx[0].parsed.x*30)}後（${Math.round(ctx[0].raw.units).toLocaleString('ja-JP')}個売れた時点）`,
+          title:ctx=>`${monthText(ctx[0].parsed.x*30)}後（発売から合計${Math.round(ctx[0].raw.units).toLocaleString('ja-JP')}個売れた時点）`,
           label:ctx=>{const v=ctx.parsed.y;const head=ctx.dataset.label==='発注'?`第${ctx.raw.no}ロット ${ctx.raw.qty}個 発注後 `:'手元 ';return head+(v>=0?'＋':'－')+fmt(Math.abs(v));}}},
         annotation:{annotations}},
       scales:{
